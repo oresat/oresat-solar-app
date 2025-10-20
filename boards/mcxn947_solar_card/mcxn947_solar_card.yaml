@@ -1,0 +1,25 @@
+
+
+identifier: mcxn947_solar_card
+name: MCXN947-solar-card 
+type: mcu
+arch: arm
+ram: 320
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - dac
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - regulator
+  - rtc
+  - sdhc
+  - watchdog
+vendor: PSAS
