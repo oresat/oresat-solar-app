@@ -180,12 +180,12 @@
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
+	status = "disabled";
 	phy-handle = <&usbphy1>;
 };
 
 &usbphy1 {
-	status = "okay";
+	status = "disabled";
 	tx-d-cal = <4>;
 	tx-cal-45-dp-ohms = <7>;
 	tx-cal-45-dm-ohms = <7>;
@@ -220,8 +220,8 @@ zephyr_udc0: &usb1 {
 };
 
 &sai1 {
-	status = "okay";
+	status = "disabled";
 };
 &sai0 {
-	status = "okay";
+	status = "disabled";
 };

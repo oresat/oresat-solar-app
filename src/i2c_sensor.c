@@ -69,8 +69,8 @@ static int init_tmp101(void)
 {
 	LOG_INF("Starting TMP108 reading");
 
-	tmp1 = DEVICE_DT_GET_ONE(ti_tmp108);
-	tmp2 = tmp1; // DEVICE_NAME_GET(tmp101_cell2);
+	tmp1 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell1));
+	tmp2 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell2));
 
 	if (!tmp1 || !tmp2) {
 		LOG_ERR("Tmp108 devices not found");
@@ -104,7 +104,15 @@ int get_temperature_continuous(const struct device *tmp108)
 {
 
 	struct sensor_value temp_value;
+	const struct device_dt_nodelabels *labels = device_get_dt_nodelabels(tmp108);
+	const char *label;
 	int rc;
+
+	if (labels && labels->num_nodelabels) {
+		label = labels->nodelabels[0];
+	} else {
+		label = "unk";
+	}
 
 	rc = sensor_channel_get(tmp108,
 				    SENSOR_CHAN_AMBIENT_TEMP,
@@ -115,7 +123,7 @@ int get_temperature_continuous(const struct device *tmp108)
 		return rc;
 	}
 
-	printk("temperature is %gC\n", sensor_value_to_double(&temp_value));
+	printk("temperature from %s (%s) is %gC\n", tmp108->name, label, sensor_value_to_double(&temp_value));
 	return 0;
 }
 
@@ -128,15 +136,15 @@ static int handle_tmp101(void)
 		LOG_ERR("tmp1 sensor_sample_fetch failed: %d", rc);
 		return rc;
 	}
-	//rc = sensor_sample_fetch(tmp2);
-	//if (rc) {
-	//	LOG_ERR("tmp2 sensor_sample_fetch failed: %d", rc);
-	//	break;
-	//}
+	rc = sensor_sample_fetch(tmp2);
+	if (rc) {
+		LOG_ERR("tmp2 sensor_sample_fetch failed: %d", rc);
+		return rc;
+	}
 
 #if 1 // !CONFIG_APP_ENABLE_ONE_SHOT
 	get_temperature_continuous(tmp1);
-	//get_temperature_continuous(tmp2);
+	get_temperature_continuous(tmp2);
 #endif
 	return 0;
 }
