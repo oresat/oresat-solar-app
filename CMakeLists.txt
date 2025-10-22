@@ -11,7 +11,7 @@ project(oresat_mcxn947_solar)
 target_sources(app PRIVATE src/main.c)
 
 # Compile in various demos depending on Kconfig values.
-target_sources_ifdef(CONFIG_BLINK      app PRIVATE src/blink.c)
-target_sources_ifdef(CONFIG_I2C_SENSOR app PRIVATE src/i2c_sensor.c)
-target_sources_ifdef(CONFIG_DAC        app PRIVATE src/dac.c)
+target_sources_ifdef(CONFIG_BLINK       app PRIVATE src/blink.c)
+target_sources_ifdef(CONFIG_I2C_SENSORS app PRIVATE src/i2c_sensor.c)
+target_sources_ifdef(CONFIG_DAC         app PRIVATE src/dac.c)
 

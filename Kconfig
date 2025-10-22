@@ -15,8 +15,8 @@ config I2C_SENSORS
     help
       Enable reading from...
 
-config DAC_INA226
-    bool "Enable control of INA226 sensor iADJ."
+config DAC_LT1618
+    bool "Enable control of LT1618 sensor iADJ."
     default y
     help
        Enable adjustable current sensing.
