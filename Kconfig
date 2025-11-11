@@ -7,19 +7,26 @@ config BLINK
     bool "Blink an LED"
     default y
     help
-      Enable the thread which blinks an LED.
+        Enable the thread which blinks an LED.
 
 config I2C_SENSORS
     bool "Enable monitoring I2C sensors"
     default y
     help
-      Enable reading from...
+        Enable reading from the ina226
 
 config DAC_LT1618
     bool "Enable control of LT1618 sensor iADJ."
     default y
     help
-       Enable adjustable current sensing.
+        Enable adjustable current control.
+
+config SOLAR
+    bool "Enable Solar Power Point Tracking"
+    default y
+    help
+        Enable the Maximum Power Point Tracking Algorithm.
+
 
 endmenu
 
