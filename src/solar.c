@@ -171,7 +171,7 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
 }
 
 //reads current and voltage of ina226
-bool observe(struct Sample* sample)
+void observe(struct Sample* sample)
 {
     struct sensor_value v_bus;
     struct sensor_value current;
@@ -180,7 +180,7 @@ bool observe(struct Sample* sample)
     rc = sensor_sample_fetch(ina);
     if (rc) {
         LOG_ERR("Could not fect sensor data: %d", rc);
-        return 1;
+        //    return 1;
     } else {
         sensor_channel_get(ina, SENSOR_CHAN_VOLTAGE, &v_bus);
         sensor_channel_get(ina, SENSOR_CHAN_CURRENT, &current);
@@ -189,7 +189,7 @@ bool observe(struct Sample* sample)
         sample->current_uA = sensor_value_to_double(&current);
     }
 
-    return 0;
+    //return 0;
 }
 
 int32_t calculate_step(MpptState* state)
