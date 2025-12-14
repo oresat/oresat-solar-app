@@ -1,8 +1,5 @@
 /*
- * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
- * Copyright (c) 2022 T-Mobile USA, Inc.
- *
- * SPDX-License-Identifier: Apache-2.0
+ * Based on zephyr/drivers/sensor/ti/tmp108/tmp108.c, originally liscenced under Apache-2.0
  */
 
 #define DT_DRV_COMPAT ti_tmp101
