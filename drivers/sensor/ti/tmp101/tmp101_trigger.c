@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
- *
- * SPDX-License-Identifier: Apache-2.0
+ * Based on zephyr/drivers/sensor/ti/tmp108/tmp108_trigger.c, originally liscenced under Apache-2.0
  */
 
 #include <zephyr/drivers/sensor.h>
