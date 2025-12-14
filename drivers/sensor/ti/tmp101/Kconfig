@@ -1,0 +1,24 @@
+# TMP101 temperature sensor configuration options
+
+# Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMP101
+	bool "TMP101 Temperature Sensor"
+	default y
+	depends on DT_HAS_TI_TMP101_ENABLED
+	select I2C
+
+	help
+	  Enable driver for the TMP101 temperature sensor.
+
+if TMP101
+
+config TMP101_ALERT_INTERRUPTS
+	bool "Allow interrupts to service over and under temp alerts"
+	help
+	  This will set up interrupts to service under and over temp alerts
+	  see TMP101 spec sheet for more information on how these work.
+
+endif # TMP101
