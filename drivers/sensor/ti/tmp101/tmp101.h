@@ -112,6 +112,15 @@ struct tmp_101_reg_def {
 
 #define TI_TMP101_GET_CONF(x, cfg) ((struct tmp101_config *)(x->config))->reg_def.cfg
 
+enum tmp101_attribute {
+   TMP101_ATTR_START = SENSOR_ATTR_PRIV_START,
+
+   SENSOR_ATTR_TMP101_ALERT_POLARITY,
+	SENSOR_ATTR_TMP101_FAULT_QUEUE,
+	SENSOR_ATTR_TMP101_SHUTDOWN_MODE,
+	SENSOR_ATTR_TMP101_CONTINUOUS_CONVERSION_MODE
+}
+
 struct tmp101_config {
 	const struct i2c_dt_spec i2c_spec;
 	struct tmp_101_reg_def reg_def;
