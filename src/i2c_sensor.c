@@ -67,7 +67,7 @@ static int handle_ina226(void)
 
 static int init_tmp101(void)
 {
-	LOG_INF("Starting TMP108 reading");
+	LOG_INF("Starting TMP101 reading");
 
 	tmp1 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell1));
 	tmp2 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell2));
@@ -78,14 +78,14 @@ static int init_tmp101(void)
 	}
 
 	if (!device_is_ready(tmp1) || !device_is_ready(tmp2)) {
-		LOG_ERR("tmp108 devices not ready");
+		LOG_ERR("tmp101 devices not ready");
 		return -ENODEV;
 	}
 
 #if 0
 	sensor_attr_set(tmp1,
 			SENSOR_CHAN_AMBIENT_TEMP,
-			SENSOR_ATTR_TMP108_CONTINUOUS_CONVERSION_MODE,
+			SENSOR_ATTR_TMP101_CONTINUOUS_CONVERSION_MODE,
 			NULL);
 
 #if CONFIG_APP_ENABLE_ONE_SHOT
@@ -100,11 +100,11 @@ static int init_tmp101(void)
 	return 0;
 }
 
-int get_temperature_continuous(const struct device *tmp108)
+int get_temperature_continuous(const struct device *tmp101)
 {
 
 	struct sensor_value temp_value;
-	const struct device_dt_nodelabels *labels = device_get_dt_nodelabels(tmp108);
+	const struct device_dt_nodelabels *labels = device_get_dt_nodelabels(tmp101);
 	const char *label;
 	int rc;
 
@@ -114,7 +114,7 @@ int get_temperature_continuous(const struct device *tmp108)
 		label = "unk";
 	}
 
-	rc = sensor_channel_get(tmp108,
+	rc = sensor_channel_get(tmp101,
 				    SENSOR_CHAN_AMBIENT_TEMP,
 				    &temp_value);
 
@@ -123,7 +123,7 @@ int get_temperature_continuous(const struct device *tmp108)
 		return rc;
 	}
 
-	printk("temperature from %s (%s) is %gC\n", tmp108->name, label, sensor_value_to_double(&temp_value));
+	printk("temperature from %s (%s) is %gC\n", tmp101->name, label, sensor_value_to_double(&temp_value));
 	return 0;
 }
 
