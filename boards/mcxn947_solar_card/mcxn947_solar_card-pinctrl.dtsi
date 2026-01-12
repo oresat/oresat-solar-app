@@ -104,6 +104,14 @@
 		};
 	};
 
+    pinmux_dac1: pinmux_dac1 {
+        group0 {
+            pinmux = <DAC1_OUT_PIO4_3>;
+            drive-strength = "low";
+            slew-rate = "fast";
+        };
+    };
+
 	pinmux_sai1: pinmux_sai1 {
 		group0 {
 			pinmux = <SAI1_TX_BCLK_PIO3_16>,

@@ -169,6 +169,11 @@
 	pinctrl-names = "default";
 };
 
+&dac1 {
+	pinctrl-0 = <&pinmux_dac1>;
+	pinctrl-names = "default";
+};
+
 &sai1 {
 	pinctrl-0 = <&pinmux_sai1>;
 	pinctrl-names = "default";

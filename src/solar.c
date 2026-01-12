@@ -56,10 +56,12 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 
 #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 
-#if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac) && \
+//FIX: only complains about issues with dac1, should check dac0 aswell
+#if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac1) && \
 	DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_channel_id) && \
 	DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_resolution))
-#define DAC_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac)
+#define DAC1_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac1)
+#define DAC0_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac0)
 #define DAC_CHANNEL_ID DT_PROP(ZEPHYR_USER_NODE, dac_channel_id)
 #define DAC_RESOLUTION DT_PROP(ZEPHYR_USER_NODE, dac_resolution)
 #else
@@ -69,15 +71,17 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define DAC_RESOLUTION 0
 #endif
 
-#define V_IN 3.3
-#define DAC_VOLTS_PER_BIT V_IN / DAC_RESOLUTION
+#define DAC_VDDA_uV 3333000
+#define DAC_VALUES (1U << DAC_RESOLUTION)
+#define DAC_UV_PER_BIT (DAC_VDDA_uV / DAC_VALUES)
 
 
 
 /* === Peripheral Structs === */
 
 static const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina226);
-const struct device *const dac_dev = DEVICE_DT_GET(DAC_NODE);
+const struct device *const dac1_dev = DEVICE_DT_GET(DAC1_NODE);
+const struct device *const dac0_dev = DEVICE_DT_GET(DAC0_NODE);
 const struct dac_channel_cfg dac_ch_cfg = {
 		.channel_id  = DAC_CHANNEL_ID,
 		.resolution  = DAC_RESOLUTION,
@@ -97,7 +101,7 @@ struct Sample //TODO: should a sample be floats or sonsor_values?
     float power_mW;
     float voltage_mV;
     float current_uA;
-//    systime_t time;
+    uint32_t time;
 };
 
 typedef struct {
@@ -133,9 +137,12 @@ uint32_t saturate_uint32_t(const int64_t v, const uint32_t min, const uint32_t m
 
 int dac_write_uV(int32_t iadj)
 {
+//   const int dac_values = 1U << DAC_RESOLUTION;
+//   const int dac_constant = dac_values / 
+
     //FIX: this garbage
-    int32_t toset = iadj / ((float) DAC_VOLTS_PER_BIT * 1E-6); // volts to microvolts
-    return dac_write_value(dac_dev, DAC_CHANNEL_ID, toset);
+    int32_t toset = (iadj * DAC_UV_PER_BIT) / 1E6 ; // microvolts to volts
+    return dac_write_value(dac1_dev, DAC_CHANNEL_ID, toset);
 }
 
 float find_ip_slope(MpptState* state, int32_t initial_iadj)
@@ -149,11 +156,11 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     state->sample = first;
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
-    dac_write_mV(working_iadj);
+    dac_write_uV(working_iadj);
     observe(&second);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
-    dac_write_mV(working_iadj);
+    dac_write_uV(working_iadj);
     observe(&third);
 
     float delta_power1 = first.power_mW - second.power_mW;
@@ -165,7 +172,7 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     float slope = (delta_power1 * delta_current2 + delta_power2 * delta_current1) / (2.0 * delta_current1 * delta_current2);
 
     LOG_INF("calculated slope as %d/10,000 out of %d \n\r", (int32_t) (slope * 10000), (int32_t) (CRITICAL_SLOPE * 10000));
-    dac_write_mV(initial_iadj);
+    dac_write_uV(initial_iadj);
     return slope;
 }
 
@@ -178,7 +185,7 @@ void observe(struct Sample* sample)
 
     rc = sensor_sample_fetch(ina);
     if (rc) {
-        LOG_ERR("Could not fect sensor data: %d", rc);
+        LOG_ERR("Could not fetch sensor data: %d", rc);
         //    return 1;
     } else {
         sensor_channel_get(ina, SENSOR_CHAN_VOLTAGE, &v_bus);
@@ -217,7 +224,7 @@ void iterate(MpptState* state)
     const int64_t iadj = state->iadj_uV + calculate_step(state);
     const uint32_t iadj_uV_perturbed = saturate_uint32_t(iadj, I_ADJ_MIN, I_ADJ_MAX);
 
-    dac_write_mV(iadj_uV_perturbed);
+    dac_write_uV(iadj_uV_perturbed);
     state->iadj_uV = iadj_uV_perturbed;
 }
 
@@ -230,17 +237,58 @@ int track()
     init_ina226();
 
 	/* Can we use the DAC? */
-    if (!device_is_ready(dac_dev)) {
-		LOG_ERR("DAC device %s is not ready", dac_dev->name);
+    if (!device_is_ready(dac1_dev)) {
+		LOG_ERR("DAC1 device %s is not ready", dac1_dev->name);
+		return -1;
+	}
+
+	/* Can we use the DAC? */
+    if (!device_is_ready(dac0_dev)) {
+		LOG_ERR("DAC0 device %s is not ready", dac0_dev->name);
 		return -1;
 	}
 
 	/* Set it up */
-	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
+	ret = dac_channel_setup(dac1_dev, &dac_ch_cfg);
 	if (ret != 0) {
-		LOG_ERR("Setting up of DAC channel failed with code %d", ret);
+		LOG_ERR("Setting up of DAC0 channel failed with code %d", ret);
 		return ret;
 	}
+
+	ret = dac_channel_setup(dac0_dev, &dac_ch_cfg);
+	if (ret != 0) {
+		LOG_ERR("Setting up of DAC0 channel failed with code %d", ret);
+		return ret;
+	}
+
+    MpptState state = {
+        .iadj_uV = I_ADJ_INITIAL,
+    };
+
+    //FIX: could there be issues when time wraps around?
+    int32_t t_start = k_uptime_get(); //in millisecondss
+    int32_t t_last = t_start;
+    int32_t t_now = t_start;
+    uint32_t energy_mJ;
+
+    state.index_loop_counter = 0;
+    int32_t spacing_loop_counter = 0;
+    int32_t main_iterations = 0;
+
+    //FIX: don't know when thread should terminate...
+    while(1) {
+
+        iterate(&state);
+
+        spacing_loop_counter += 1;
+
+        t_last = t_now;
+        t_now = state.sample.time;
+        energy_mJ += state.sample.power_mW * (t_now - t_last) * 1000; //convert ms to s
+
+        ///send stuff to OD ram or something
+        k_msleep(t_start + ITERATION_PERIOD * ++main_iterations);
+    }
 
 
     return 0;

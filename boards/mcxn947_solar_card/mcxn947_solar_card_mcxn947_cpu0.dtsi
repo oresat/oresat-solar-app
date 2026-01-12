@@ -41,8 +41,9 @@
 	};
 
 	zephyr,user {
-		dac = <&dac0>;
-		dac-channel-id = <1>;
+		dac0 = <&dac0>;
+        dac1 = <&dac1>;
+		dac-channel-id = <0>;
 		dac-resolution = <12>;
 		status = "okay";
 	};
@@ -131,6 +132,10 @@
 };
 
 &dac0 {
+	status = "okay";
+};
+
+&dac1 {
 	status = "okay";
 };
 
