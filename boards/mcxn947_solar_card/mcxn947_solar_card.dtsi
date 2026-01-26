@@ -62,7 +62,8 @@
 	ina226: ina226@40 {
 		compatible = "ti,ina226";
 		reg = <0x40>;
-		current-lsb-microamps = <500>;
+        operating-mode = "Shunt and Bus, Continuous";
+		current-lsb-microamps = <20>; //pulled from chibios app
 		rshunt-micro-ohms = <100000>;
 		status = "okay";
 	};

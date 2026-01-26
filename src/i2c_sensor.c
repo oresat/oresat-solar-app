@@ -33,9 +33,9 @@ static int init_ina226(void)
 {
 	LOG_INF("Starting INA226 reading");
 
-	if (!device_is_ready(ina)) {
+	while (!device_is_ready(ina)) {
 		LOG_ERR("Device %s is not ready.", ina->name);
-		return -ENODEV;
+		//return -ENODEV;
 	}
 	return 0;
 }
@@ -55,7 +55,7 @@ static int handle_ina226(void)
 		sensor_channel_get(ina, SENSOR_CHAN_POWER, &power);
 		sensor_channel_get(ina, SENSOR_CHAN_CURRENT, &current);
 
-		printk("Bus: %f [V] -- "
+		LOG_INF("Bus: %f [V] -- "
 			   "Power: %f [W] -- "
 			   "Current: %f [A]\n",
 			   sensor_value_to_double(&v_bus),
@@ -155,14 +155,14 @@ static int handle_i2c_sensors(void)
 	int rc2;
 
 	rc1 = init_ina226();
-	rc2 = init_tmp101();
+	//rc2 = init_tmp101();
 	while (true) {
 		if (!rc1) {
 			rc1 = handle_ina226();
 		}
-		if (!rc2) {
-			rc2 = handle_tmp101();
-		}
+		//if (!rc2) {
+		//	rc2 = handle_tmp101();
+		//}
 		k_sleep(K_MSEC(2000));
 	}
 	return 0;
