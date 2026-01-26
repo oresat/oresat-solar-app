@@ -112,10 +112,6 @@ typedef struct {
     uint32_t index_loop_counter;
 } MpptState;
 
-
-
-
-
 static int init_ina226(void)
 {
     LOG_INF("Starting INA226 reading");
@@ -137,12 +133,37 @@ uint32_t saturate_uint32_t(const int64_t v, const uint32_t min, const uint32_t m
 
 int dac_write_uV(int32_t iadj)
 {
-//   const int dac_values = 1U << DAC_RESOLUTION;
-//   const int dac_constant = dac_values / 
-
-    //FIX: this garbage
-    int32_t toset = (iadj * DAC_UV_PER_BIT) / 1E6 ; // microvolts to volts
+    int32_t toset = (iadj / DAC_UV_PER_BIT);
     return dac_write_value(dac1_dev, DAC_CHANNEL_ID, toset);
+}
+
+//reads current and voltage of ina226
+void observe(struct Sample* sample)
+{
+    struct sensor_value v_bus;
+    struct sensor_value current;
+    struct sensor_value power;
+    int rc; //return code
+
+    rc = sensor_sample_fetch(ina);
+    if (rc) {
+        LOG_ERR("Could not fetch sensor data: %d", rc);
+        //    return 1;
+    } else {
+        sensor_channel_get(ina, SENSOR_CHAN_VOLTAGE, &v_bus);
+        sensor_channel_get(ina, SENSOR_CHAN_CURRENT, &current);
+        sensor_channel_get(ina, SENSOR_CHAN_POWER, &power);
+        //TODO: should values be scaled to prefixes here? or stay as base units under double prescision?
+        //TODO: I was getting very low resolution on the power values from the ina226, so we're calculating it here
+        sample->power_mW = sensor_value_to_double(&v_bus) * sensor_value_to_double(&current) * 1E3;
+        sample->voltage_mV = sensor_value_to_double(&v_bus) * 1E3;
+        sample->current_uA = sensor_value_to_double(&current) * 1E6;
+        //sample->power_mW = sensor_value_to_double(&power) * 1E3;
+        sample->time = k_uptime_get();
+        // LOG_INF("data after observe: voltage: %f [mV], current: %f [uA], power %f [mW]", sample->voltage_mV, sample->current_uA, sample->power_mW);
+    }
+
+    //return 0;
 }
 
 float find_ip_slope(MpptState* state, int32_t initial_iadj)
@@ -154,14 +175,17 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     int32_t working_iadj = initial_iadj;
     observe(&first);
     state->sample = first;
+    LOG_INF("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", first.voltage_mV, first.current_uA, first.power_mW);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
     observe(&second);
+    //LOG_INF("second sample: voltage: %f [mV], current: %f [uA]", second.voltage_mV, second.current_uA);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
     observe(&third);
+    //LOG_INF("third sample: voltage: %f [mV], current: %f [uA]", third.voltage_mV, third.current_uA);
 
     float delta_power1 = first.power_mW - second.power_mW;
     float delta_current1 = first.current_uA - second.current_uA;
@@ -170,32 +194,11 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     float delta_current2 = second.current_uA - third.current_uA;
 
     float slope = (delta_power1 * delta_current2 + delta_power2 * delta_current1) / (2.0 * delta_current1 * delta_current2);
+    //LOG_INF(" delta_power1:%f, delta_current1:%f, delta_power2:%f, delta_current2:%f", delta_power1, delta_current1, delta_power2, delta_current2);
 
-    LOG_INF("calculated slope as %d/10,000 out of %d \n\r", (int32_t) (slope * 10000), (int32_t) (CRITICAL_SLOPE * 10000));
+    LOG_INF("calculated slope as %f out of %f \n\r", slope, CRITICAL_SLOPE);
     dac_write_uV(initial_iadj);
     return slope;
-}
-
-//reads current and voltage of ina226
-void observe(struct Sample* sample)
-{
-    struct sensor_value v_bus;
-    struct sensor_value current;
-    int rc; //return code
-
-    rc = sensor_sample_fetch(ina);
-    if (rc) {
-        LOG_ERR("Could not fetch sensor data: %d", rc);
-        //    return 1;
-    } else {
-        sensor_channel_get(ina, SENSOR_CHAN_VOLTAGE, &v_bus);
-        sensor_channel_get(ina, SENSOR_CHAN_CURRENT, &current);
-
-        sample->voltage_mV = sensor_value_to_double(&v_bus);
-        sample->current_uA = sensor_value_to_double(&current);
-    }
-
-    //return 0;
 }
 
 int32_t calculate_step(MpptState* state)
@@ -275,8 +278,23 @@ int track()
     int32_t spacing_loop_counter = 0;
     int32_t main_iterations = 0;
 
+    ////CHARACTARIZATION SWEEP
+    //int iadj_stepsize = 2500; //uA
+    //int looping_iadj = 1600000;
+    //while(1) {
+    //    dac_write_uV(looping_iadj);
+    //    looping_iadj -= iadj_stepsize;
+    //    struct Sample sample;
+    //    observe(&sample);
+    //    LOG_INF("%f %f %f %d", sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
+    //    LOG_INF("solar thread ran");
+    //    k_msleep(10);
+    //}
+    ////END CHARACTARIZATION SWEEP
+
     //FIX: don't know when thread should terminate...
     while(1) {
+
 
         iterate(&state);
 
@@ -287,7 +305,8 @@ int track()
         energy_mJ += state.sample.power_mW * (t_now - t_last) * 1000; //convert ms to s
 
         ///send stuff to OD ram or something
-        k_msleep(t_start + ITERATION_PERIOD * ++main_iterations);
+    //    k_msleep(t_start + ITERATION_PERIOD * ++main_iterations);
+        k_msleep(10);
     }
 
 
