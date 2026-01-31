@@ -61,7 +61,6 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 	DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_channel_id) && \
 	DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_resolution))
 #define DAC1_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac1)
-#define DAC0_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac0)
 #define DAC_CHANNEL_ID DT_PROP(ZEPHYR_USER_NODE, dac_channel_id)
 #define DAC_RESOLUTION DT_PROP(ZEPHYR_USER_NODE, dac_resolution)
 #else
@@ -81,7 +80,6 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 
 static const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina226);
 const struct device *const dac1_dev = DEVICE_DT_GET(DAC1_NODE);
-const struct device *const dac0_dev = DEVICE_DT_GET(DAC0_NODE);
 const struct dac_channel_cfg dac_ch_cfg = {
 		.channel_id  = DAC_CHANNEL_ID,
 		.resolution  = DAC_RESOLUTION,
@@ -92,7 +90,39 @@ const struct dac_channel_cfg dac_ch_cfg = {
 	#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 	}; //TODO: specify averaging
 
+/**************************************************/
+#define BP_NODE DT_NODELABEL(solargpios)
 
+static const struct gpio_dt_spec ina226_nalert = GPIO_DT_SPEC_GET(BP_NODE, ina226_nalert_gpios);
+static const struct gpio_dt_spec cell1_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell1_tmp101_alert_gpios);
+static const struct gpio_dt_spec cell2_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell2_tmp101_alert_gpios);
+static const struct gpio_dt_spec lt1618_enable = GPIO_DT_SPEC_GET(BP_NODE, lt1618_enable_gpios);
+
+static int gpios_init(void)
+{
+    int ret;
+
+    ret = gpio_pin_configure_dt(&ina226_nalert, GPIO_INPUT);
+    if (ret) {
+        return ret;
+    }
+    ret = gpio_pin_configure_dt(&cell1_tmp101_alert, GPIO_INPUT);
+    if (ret) {
+        return ret;
+    }
+    ret = gpio_pin_configure_dt(&cell2_tmp101_alert, GPIO_INPUT);
+    if (ret) {
+        return ret;
+    }
+    ret = gpio_pin_configure_dt(&lt1618_enable, GPIO_OUTPUT_ACTIVE); // enable the LT1618
+    if (ret) {
+        return ret;
+    }
+
+    return ret;
+}
+
+/**************************************************/
 
 /* === Algorithm Structs === */
 
@@ -138,7 +168,7 @@ uint32_t saturate_uint32_t(const int64_t v, const uint32_t min, const uint32_t m
 int dac_write_uV(int32_t iadj)
 {
 //   const int dac_values = 1U << DAC_RESOLUTION;
-//   const int dac_constant = dac_values / 
+//   const int dac_constant = dac_values /
 
     //FIX: this garbage
     int32_t toset = (iadj * DAC_UV_PER_BIT) / 1E6 ; // microvolts to volts
@@ -232,8 +262,13 @@ int track()
 {
     LOG_INF("Starting Solar Tracking...");
 
-    int ret = 0;
+    int ret;
 
+    ret = gpios_init();
+    if (ret != 0) {
+        LOG_ERR("Error initializing GPIO lines: %d", ret);
+        return ret;
+    }
     init_ina226();
 
 	/* Can we use the DAC? */
@@ -242,22 +277,10 @@ int track()
 		return -1;
 	}
 
-	/* Can we use the DAC? */
-    if (!device_is_ready(dac0_dev)) {
-		LOG_ERR("DAC0 device %s is not ready", dac0_dev->name);
-		return -1;
-	}
-
 	/* Set it up */
 	ret = dac_channel_setup(dac1_dev, &dac_ch_cfg);
 	if (ret != 0) {
-		LOG_ERR("Setting up of DAC0 channel failed with code %d", ret);
-		return ret;
-	}
-
-	ret = dac_channel_setup(dac0_dev, &dac_ch_cfg);
-	if (ret != 0) {
-		LOG_ERR("Setting up of DAC0 channel failed with code %d", ret);
+		LOG_ERR("Setting up of DAC1 channel failed with code %d", ret);
 		return ret;
 	}
 

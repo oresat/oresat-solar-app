@@ -11,10 +11,8 @@
 /dts-v1/;
 
 #include <nxp/nxp_mcxn94x.dtsi>
-#include "mcxn947_solar_card.dtsi"
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
-
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -34,19 +32,86 @@
 	};
 
 	aliases{
+		led0 = &red_led;
 		watchdog0 = &wwdt0;
-		pwm-0 = &flexpwm1_pwm0;
-		pwm-1 = &sc_timer;
 		rtc = &rtc;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+			status = "okay";
+		};
+	};
+
+	solargpios: solar-gpios {
+		compatible = "solar-card";
+		ina226-nalert-gpios = <&gpio4 4 0>;
+		cell1-tmp101-alert-gpios = <&gpio4 20 0>;
+		cell2-tmp101-alert-gpios = <&gpio4 23 0>;
+		lt1618-enable-gpios = <&gpio4 2 GPIO_ACTIVE_HIGH>;
+	};
+
 	zephyr,user {
-		dac0 = <&dac0>;
-        dac1 = <&dac1>;
+		dac1 = <&dac1>;
 		dac-channel-id = <0>;
 		dac-resolution = <12>;
 		status = "okay";
 	};
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm0_lpi2c0 {
+	pinctrl-0 = <&pinmux_flexcomm0_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	ina226: ina226@40 {
+		compatible = "ti,ina226";
+		reg = <0x40>;
+		current-lsb-microamps = <500>;
+		rshunt-micro-ohms = <100000>;
+		status = "okay";
+	};
+	tmp101_cell1: tmp108@48 {
+		compatible = "ti,tmp108";
+		reg = <0x48>;
+		status = "okay";
+	};
+	tmp101_cell2: tmp108@4a {
+		compatible = "ti,tmp108";
+		reg = <0x4a>;
+		status = "okay";
+	};
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&flexcomm4_lpuart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm4_lpuart>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac1 {
+	pinctrl-0 = <&pinmux_dac1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 /*
@@ -61,6 +126,43 @@
 &sram0 {
 	compatible = "mmio-sram";
 	reg = <0x20000000 DT_SIZE_K(320)>;
+};
+
+&sram {
+	sramg: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 DT_SIZE_K(64)>;
+	};
+	sramh: memory@20060000 {
+		compatible = "mmio-sram";
+		reg = <0x20060000 DT_SIZE_K(32)>;
+	};
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+		};
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(984)>;
+		};
+		slot1_partition: partition@10A000 {
+			label = "image-1";
+			reg = <0x0010A000 DT_SIZE_K(984)>;
+		};
+		/* storage_partition is placed in WINBOND flash memory*/
+	};
 };
 
 &mbox {
@@ -83,83 +185,15 @@
 	status = "okay";
 };
 
-&red_led {
-	status = "okay";
-};
-
 &edma0 {
 	status = "okay";
-};
-
-&flexcomm0 {
-	status = "okay";
-};
-
-&flexcomm0_lpi2c0 {
-	status = "okay";
-};
-
-&flexcomm1 {
-	status = "disabled";
-};
-
-&flexcomm1_lpspi1 {
-	status = "disabled";
-};
-
-&flexcomm2 {
-	status = "disabled";
-};
-
-&flexcomm2_lpi2c2 {
-	status = "disabled";
-};
-
-&flexcomm2_lpuart2 {
-	status = "disabled";
-};
-
-&flexcomm4 {
-	status = "okay";
-};
-
-&flexcomm4_lpuart4 {
-	status = "okay";
-};
-
-&flexspi {
-	status = "disabled";
-};
-
-&dac0 {
-	status = "okay";
-};
-
-&dac1 {
-	status = "okay";
-};
-
-&enet {
-	status = "disabled";
-};
-
-&enet_mac {
-	status = "disabled";
-};
-
-&enet_mdio {
-	status = "disabled";
 };
 
 &wwdt0 {
 	status = "okay";
 };
 
-&flexpwm1_pwm0 {
-	status = "okay";
-};
-
-&flexcan0 {
+&systick {
 	status = "okay";
 };
 
@@ -167,45 +201,12 @@
 	status = "okay";
 };
 
-&usdhc0 {
-	status = "disabled";
-	sdmmc {
-		compatible = "zephyr,sdmmc-disk";
-		disk-name = "SD";
-		status = "disabled";
-	};
-};
-
 &vref {
-	status = "okay";
-};
-
-&lpadc0 {
-	status = "okay";
-};
-
-zephyr_udc0: &usb1 {
-	status = "disabled";
-	phy-handle = <&usbphy1>;
-};
-
-&usbphy1 {
-	status = "disabled";
-	tx-d-cal = <4>;
-	tx-cal-45-dp-ohms = <7>;
-	tx-cal-45-dm-ohms = <7>;
-};
-
-&lpcmp0 {
 	status = "okay";
 };
 
 &lptmr0 {
 	status = "okay";
-};
-
-&i3c1 {
-	status = "disabled";
 };
 
 &flexio0 {
@@ -221,12 +222,11 @@ zephyr_udc0: &usb1 {
 };
 
 &sc_timer {
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
-&sai1 {
-	status = "disabled";
-};
-&sai0 {
+&enet {
 	status = "disabled";
 };
