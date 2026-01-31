@@ -55,8 +55,7 @@
 	};
 
 	zephyr,user {
-		dac0 = <&dac0>;
-        dac1 = <&dac1>;
+		dac1 = <&dac1>;
 		dac-channel-id = <0>;
 		dac-resolution = <12>;
 		status = "okay";
@@ -192,66 +191,6 @@
 
 &edma0 {
 	status = "okay";
-};
-
-&flexcomm0 {
-	status = "okay";
-};
-
-&flexcomm0_lpi2c0 {
-	status = "okay";
-};
-
-&flexcomm1 {
-	status = "disabled";
-};
-
-&flexcomm1_lpspi1 {
-	status = "disabled";
-};
-
-&flexcomm2 {
-	status = "disabled";
-};
-
-&flexcomm2_lpi2c2 {
-	status = "disabled";
-};
-
-&flexcomm2_lpuart2 {
-	status = "disabled";
-};
-
-&flexcomm4 {
-	status = "okay";
-};
-
-&flexcomm4_lpuart4 {
-	status = "okay";
-};
-
-&flexspi {
-	status = "disabled";
-};
-
-&dac0 {
-	status = "okay";
-};
-
-&dac1 {
-	status = "okay";
-};
-
-&enet {
-	status = "disabled";
-};
-
-&enet_mac {
-	status = "disabled";
-};
-
-&enet_mdio {
-	status = "disabled";
 };
 
 &wwdt0 {
