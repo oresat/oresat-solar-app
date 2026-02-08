@@ -10,7 +10,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/sensor/tmp101.h>
+//#include <zephyr/drivers/sensor/tmp101.h> // What was this line for?
 
 #define TI_TMP101_REG_TEMP		0x00   /** Temperature register */
 #define TI_TMP101_REG_CONF		0x01   /** Configuration register */
@@ -110,13 +110,13 @@ struct tmp_101_reg_def {
 #define TI_TMP101_GET_CONF(x, cfg) ((struct tmp101_config *)(x->config))->reg_def.cfg
 
 enum tmp101_attribute {
-   TMP101_ATTR_START = SENSOR_ATTR_PRIV_START,
-
-   SENSOR_ATTR_TMP101_ALERT_POLARITY,
+	TMP101_ATTR_START = SENSOR_ATTR_PRIV_START,
+	SENSOR_ATTR_TMP101_ALERT_POLARITY,
 	SENSOR_ATTR_TMP101_FAULT_QUEUE,
 	SENSOR_ATTR_TMP101_SHUTDOWN_MODE,
+	SENSOR_ATTR_TMP101_ONE_SHOT_MODE, // tmp108 doesn't have this line somehow.
 	SENSOR_ATTR_TMP101_CONTINUOUS_CONVERSION_MODE
-}
+};
 
 struct tmp101_config {
 	const struct i2c_dt_spec i2c_spec;
@@ -150,7 +150,7 @@ int tmp101_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
 int ti_tmp101_read_temp(const struct device *dev);
 void tmp101_trigger_handle_one_shot(struct k_work *work);
 void tmp101_trigger_handle_alert(const struct device *port,
-				 struct gpio_callback *cb,
-				 gpio_port_pins_t pins);
+				struct gpio_callback *cb,
+				gpio_port_pins_t pins);
 
 #endif /*  ZEPHYR_DRIVERS_SENSOR_TMP101_TMP101_H_ */
