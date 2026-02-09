@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Centro de Inovacao EDGE.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Oresat MCXN947 Solar Card"
+
+config BLINK
+    bool "Blink an LED"
+    default y
+    help
+      Enable the thread which blinks an LED.
+
+config I2C_SENSORS
+    bool "Enable monitoring I2C sensors"
+    default y
+    help
+      Enable reading from...
+
+config DAC_LT1618
+    bool "Enable control of LT1618 sensor iADJ."
+    default y
+    help
+       Enable adjustable current sensing.
+
+endmenu
+
+source "Kconfig.zephyr"

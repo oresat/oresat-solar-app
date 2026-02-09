@@ -1,0 +1,11 @@
+
+/dts-v1/;
+
+#include "mcxn947_solar_card_mcxn947_cpu0.dtsi"
+#include "mcxn947_solar_card-pinctrl.dtsi"
+#include "mcxn947_solar_card.dtsi"
+
+/ {
+	model = "NXP MCXN947 solar card";
+	compatible = "nxp,mcxn947", "nxp,mcx";
+};

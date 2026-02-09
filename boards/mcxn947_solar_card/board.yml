@@ -1,0 +1,5 @@
+board:
+  name: mcxn947_solar_card
+  vendor: PSAS
+  socs:
+    - name: mcxn947
