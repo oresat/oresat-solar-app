@@ -1,0 +1,26 @@
+# Oresat solar card
+
+description: Oresat solar card
+
+compatible: "solar-card"
+
+properties:
+  ina226-nalert-gpios:
+    type: phandle-array
+    required: true
+    description: Input of active low alert from INA226 device.
+
+  cell1-tmp101-alert-gpios:
+    type: phandle-array
+    required: true
+    description: Input of active low alert from cell1 tmp101 device.
+
+  cell2-tmp101-alert-gpios:
+    type: phandle-array
+    required: true
+    description: Input of active low alert from cell2 tmp101 device.
+
+  lt1618-enable-gpios:
+    type: phandle-array
+    required: true
+    description: Output to enable the LT1618 device.
