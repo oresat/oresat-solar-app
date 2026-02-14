@@ -1,0 +1,22 @@
+# TMP101 temperature sensor configuration options
+
+# Based on zephyr/drivers/sensor/ti/tmp108/Kconfig, originally liscenced under Apache-2.0
+
+menuconfig TMP101
+	bool "TMP101 Temperature Sensor"
+	default y
+	depends on DT_HAS_TI_TMP101_ENABLED
+	select I2C
+
+	help
+	  Enable driver for the TMP101 temperature sensor.
+
+if TMP101
+
+config TMP101_ALERT_INTERRUPTS
+	bool "Allow interrupts to service over and under temp alerts"
+	help
+	  This will set up interrupts to service under and over temp alerts
+	  see TMP101 spec sheet for more information on how these work.
+
+endif # TMP101

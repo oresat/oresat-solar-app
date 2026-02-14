@@ -1,0 +1,16 @@
+# Based on zephyr/drivers/sensor/ti/tmp108/Kconfig, originally liscenced under Apache-2.0
+
+description: |
+    TMP101 Digital Temperature Sensor.  See more info at
+    https://www.ti.com/product/TMP101
+
+compatible: "ti,tmp101"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal produced by the sensor. 
+      The ALERT signal's polarity is dependent on the sensor's config.
