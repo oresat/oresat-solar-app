@@ -79,13 +79,13 @@
 		rshunt-micro-ohms = <100000>;
 		status = "okay";
 	};
-	tmp101_cell1: tmp108@48 {
-		compatible = "ti,tmp108";
+	tmp101_cell1: tmp101@48 {
+		compatible = "ti,tmp101";
 		reg = <0x48>;
 		status = "okay";
 	};
-	tmp101_cell2: tmp108@4a {
-		compatible = "ti,tmp108";
+	tmp101_cell2: tmp101@4a {
+		compatible = "ti,tmp101";
 		reg = <0x4a>;
 		status = "okay";
 	};

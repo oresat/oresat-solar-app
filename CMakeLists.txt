@@ -8,7 +8,10 @@ set(BOARD "mcxn947_solar_card/mcxn947/cpu0")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(oresat_mcxn947_solar)
 
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE
+        src/main.c
+        drivers/sensor/ti/tmp101/tmp101.c
+    )
 
 # Compile in various demos depending on Kconfig values.
 target_sources_ifdef(CONFIG_BLINK       app PRIVATE src/blink.c)

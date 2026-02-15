@@ -1,0 +1,4 @@
+zephyr_library()
+
+zephyr_library_sources(tmp101.c)
+zephyr_library_sources_ifdef(CONFIG_TMP101_ALERT_INTERRUPTS tmp101_trigger.c)
