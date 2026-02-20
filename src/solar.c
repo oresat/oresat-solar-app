@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor_data_types.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/dsp/print_format.h>
@@ -234,8 +235,8 @@ void iterate(MpptState* state)
 int track()
 {
     LOG_INF("Starting Solar Tracking...");
-
     int ret = 0;
+    i2c_recover_bus(DEVICE_DT_GET(DT_NODELABEL(flexcomm0_lpi2c0)));
 
     init_ina226();
 
