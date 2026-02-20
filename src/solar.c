@@ -49,6 +49,7 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define VREF_STEP_NEGATIVE_uV             -16000
 #define VREF_STEP_POSITIVE_uV             (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
 #define MAX_STEP 100000 //cap steps so they aren't too big when dynamic
+#define CURRENT_SETTLE_TIME 2 //ms
 
 #define ITERATION_PERIOD 50
 
@@ -146,6 +147,7 @@ void observe(struct Sample* sample)
     struct sensor_value power;
     int rc; //return code
 
+    k_msleep(CURRENT_SETTLE_TIME);
     rc = sensor_sample_fetch(ina);
     if (rc) {
         LOG_ERR("Could not fetch sensor data: %d", rc);
@@ -305,9 +307,11 @@ int track()
         t_now = state.sample.time;
         energy_mJ += state.sample.power_mW * (t_now - t_last) * 1000; //convert ms to s
 
+
         ///send stuff to OD ram or something
-    //    k_msleep(t_start + ITERATION_PERIOD * ++main_iterations);
-        k_msleep(10);
+        t_now = k_uptime_get();
+        k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
+
     }
 
 
