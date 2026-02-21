@@ -65,6 +65,9 @@
         operating-mode = "Shunt and Bus, Continuous";
 		current-lsb-microamps = <20>; //pulled from chibios app
 		rshunt-micro-ohms = <100000>;
+        vbus-conversion-time-us = <588>;
+        vshunt-conversion-time-us = <588>;
+        avg-count = <1>;
 		status = "okay";
 	};
 	tmp101_cell1: tmp108@48 {
