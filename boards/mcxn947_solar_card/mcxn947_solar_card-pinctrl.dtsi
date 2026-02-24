@@ -24,6 +24,7 @@
 			pinmux = <FC4_P0_PIO1_8>,
 				<FC4_P1_PIO1_9>;
 			slew-rate = "fast";
+			bias-pull-up;
 			drive-strength = "low";
 			input-enable;
 		};
