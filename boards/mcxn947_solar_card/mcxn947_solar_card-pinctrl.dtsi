@@ -4,7 +4,7 @@
  */
 
 
-#include <nxp/mcx/MCXN947VDF-pinctrl.h>
+#include <nxp/mcx/MCXN947VNL-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_lpi2c: pinmux_flexcomm0_lpi2c {
