@@ -55,8 +55,8 @@
 	};
 
 	zephyr,user {
-		dac = <&dac1>;
-		dac-channel-id = <1>;
+		dac1 = <&dac1>;
+		dac-channel-id = <0>;
 		dac-resolution = <12>;
 		status = "okay";
 	};
@@ -75,8 +75,12 @@
 	ina226: ina226@40 {
 		compatible = "ti,ina226";
 		reg = <0x40>;
-		current-lsb-microamps = <500>;
+		operating-mode = "Shunt and Bus, Continuous";
+		current-lsb-microamps = <20>; //pulled from chibios app
 		rshunt-micro-ohms = <100000>;
+        vbus-conversion-time-us = <588>;
+        vshunt-conversion-time-us = <588>;
+        avg-count = <1>;
 		status = "okay";
 	};
 	tmp101_cell1: tmp101@48 {
