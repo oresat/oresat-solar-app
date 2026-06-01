@@ -1,0 +1,2 @@
+time, V, I, P, iadj
+idk, mV, uA, mW, uA
