@@ -7,7 +7,7 @@
  */
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h> 
+#include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/device.h>
@@ -115,8 +115,8 @@ int get_temperature_continuous(const struct device *tmp101)
 	}
 
 	rc = sensor_channel_get(tmp101,
-				    SENSOR_CHAN_AMBIENT_TEMP,
-				    &temp_value);
+					SENSOR_CHAN_AMBIENT_TEMP,
+					&temp_value);
 
 	if (rc) {
 		LOG_ERR("Sensor_channel_get failed: %d", rc);

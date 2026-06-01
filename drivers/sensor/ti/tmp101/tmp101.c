@@ -217,7 +217,6 @@ static int tmp101_attr_set(const struct device *dev,
 			   const struct sensor_value *val)
 {
 	struct tmp101_data *drv_data = dev->data;
-	const struct tmp101_config *config = dev->config;
 	__maybe_unused uint16_t reg_value;
 	__maybe_unused int32_t uval;
 	uint8_t mode;
