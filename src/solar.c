@@ -62,7 +62,6 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac1) && \
     DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_channel_id) && \
     DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dac_resolution))
-#define DAC0_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac0)
 #define DAC1_NODE DT_PHANDLE(ZEPHYR_USER_NODE, dac1)
 #define DAC_CHANNEL_ID DT_PROP(ZEPHYR_USER_NODE, dac_channel_id)
 #define DAC_RESOLUTION DT_PROP(ZEPHYR_USER_NODE, dac_resolution)
@@ -82,7 +81,6 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 /* === Peripheral Structs === */
 
 static const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina226);
-const struct device *const dac0_dev = DEVICE_DT_GET(DAC0_NODE);
 const struct device *const dac1_dev = DEVICE_DT_GET(DAC1_NODE);
 const struct dac_channel_cfg dac_ch_cfg = {
         .channel_id  = DAC_CHANNEL_ID,
@@ -285,22 +283,9 @@ int track(void)
         return -1;
     }
 
-    /* Can we use the DAC? */
-    if (!device_is_ready(dac0_dev)) {
-        LOG_ERR("DAC0 device %s is not ready", dac0_dev->name);
-        return -1;
-    }
-
     /* Set it up */
     ret = dac_channel_setup(dac1_dev, &dac_ch_cfg);
     if (ret != 0) {
-        LOG_ERR("Setting up of DAC1 channel failed with code %d", ret);
-        return ret;
-    }
-
-    ret = dac_channel_setup(dac0_dev, &dac_ch_cfg);
-    if (ret != 0) {
-        LOG_ERR("Setting up of DAC0 channel failed with code %d", ret);
         LOG_ERR("Setting up of DAC1 channel failed with code %d", ret);
         return ret;
     }
