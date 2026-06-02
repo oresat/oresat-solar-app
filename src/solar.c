@@ -14,6 +14,8 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <canopennode.h>
+#include <CO_OD.h>
 
 LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 
@@ -87,13 +89,15 @@ const struct dac_channel_cfg dac_ch_cfg = {
     #endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 }; //TODO: specify averaging
 
-/**************************************************/
+/* === GPIO data === */
 #define BP_NODE DT_NODELABEL(solargpios)
 
 static const struct gpio_dt_spec ina226_nalert = GPIO_DT_SPEC_GET(BP_NODE, ina226_nalert_gpios);
 static const struct gpio_dt_spec cell1_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell1_tmp101_alert_gpios);
 static const struct gpio_dt_spec cell2_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell2_tmp101_alert_gpios);
 static const struct gpio_dt_spec lt1618_enable = GPIO_DT_SPEC_GET(BP_NODE, lt1618_enable_gpios);
+
+/**************************************************/
 
 static int gpios_init(void)
 {
@@ -122,6 +126,10 @@ static int gpios_init(void)
 /**************************************************/
 
 /* === Algorithm Structs === */
+
+typedef enum {
+    MPPT_ALGORITHM_PAO = 0
+} mppt_algorithm_t;
 
 struct Sample //TODO: should a sample be floats or sensor_values?
 {
@@ -290,10 +298,10 @@ int track(void)
     };
 
     //FIX: could there be issues when time wraps around?
-    int32_t t_start = k_uptime_get(); //in millisecondss
+    int32_t t_start = k_uptime_get(); //in milliseconds
     int32_t t_last = t_start;
     int32_t t_now = t_start;
-    uint32_t energy_mJ;
+    uint32_t energy_mJ = 0;
 
     state.index_loop_counter = 0;
     int32_t spacing_loop_counter = 0;
@@ -314,6 +322,8 @@ int track(void)
     }
     //END CHARACTERIZATION SWEEP
 #endif
+    //Only PAO implemented for the time being
+    CO_OD_RAM.mppt_alg = MPPT_ALGORITHM_PAO;
 
     while(1) {
         iterate(&state);
@@ -324,8 +334,25 @@ int track(void)
         t_now = state.sample.time;
         energy_mJ += state.sample.power_mW * (t_now - t_last) * 1000; //convert ms to s
 
-        ///send stuff to OD ram or something
-        t_now = k_uptime_get();
+        // Dividing by 1k to convert to joules and truncate to 16 bits for the OD.
+        // FIXME: truncation looks suspicious
+
+        //send stuff to OD_RAM (eventually sent over CAN)
+        CO_OD_RAM.output.energy = (uint16_t) energy_mJ / 1000;
+
+        CO_OD_RAM.output.voltage = (uint16_t) state.sample.voltage_mV;
+        CO_OD_RAM.output.voltage_avg = (uint16_t) state.sample.voltage_mV;
+        CO_OD_RAM.output.current = (uint16_t) (state.sample.current_uA / 1000);
+        CO_OD_RAM.output.current_avg = (uint16_t) (state.sample.current_uA / 1000);
+        CO_OD_RAM.output.power = (uint16_t) state.sample.power_mW;
+        CO_OD_RAM.output.power_avg = (uint16_t) state.sample.power_mW;
+
+        CO_OD_RAM.output.voltage_max = MAX(CO_OD_RAM.output.voltage_max, (uint16_t) state.sample.voltage_mV);
+        CO_OD_RAM.output.current_max = MAX(CO_OD_RAM.output.current_max, (uint16_t) (state.sample.current_uA / 1000));
+        CO_OD_RAM.output.power_max = MAX(CO_OD_RAM.output.power_max, (uint16_t) state.sample.power_mW);
+
+        CO_OD_RAM.lt1618_iadj = state.iadj_uV / 1000;
+
         k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
     }
 
