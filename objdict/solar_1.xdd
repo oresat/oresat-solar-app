@@ -15,7 +15,7 @@
         <ProfileTechnology>CANopen</ProfileTechnology>
       </ISO15745Reference>
     </ProfileHeader>
-    <ProfileBody xmlns:q1="http://www.canopen.org/xml/1.1" xsi:type="q1:ProfileBody_Device_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar_1.xdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModifiedBy="" fileModificationDate="2026-06-02" fileModificationTime="10:49:47.1599805-07:00" fileVersion="" supportedLanguages="en" xmlns="">
+    <ProfileBody xmlns:q1="http://www.canopen.org/xml/1.1" xsi:type="q1:ProfileBody_Device_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar_1.xdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModifiedBy="" fileModificationDate="2026-06-02" fileModificationTime="11:05:49.8158807-07:00" fileVersion="" supportedLanguages="en" xmlns="">
       <q1:DeviceIdentity>
         <q1:vendorName>PSAS</q1:vendorName>
         <q1:vendorID>0</q1:vendorID>
@@ -1139,6 +1139,7 @@
           <q1:parameter uniqueID="UID_OBJ_1A02">
             <label lang="en">TPDO mapping parameter</label>
             <q1:dataTypeIDRef uniqueIDRef="UID_REC_1A02" />
+            <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
           </q1:parameter>
           <q1:parameter uniqueID="UID_SUB_1A0200" access="readWrite">
             <label lang="en">Number of mapped application objects in PDO</label>
@@ -1618,7 +1619,7 @@
         <ProfileTechnology>CANopen</ProfileTechnology>
       </ISO15745Reference>
     </ProfileHeader>
-    <ProfileBody xmlns:q2="http://www.canopen.org/xml/1.1" xsi:type="q2:ProfileBody_CommunicationNetwork_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar_1.xdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModificationDate="2026-06-02" fileModificationTime="10:49:47.1599805-07:00" fileVersion="" supportedLanguages="en" xmlns="">
+    <ProfileBody xmlns:q2="http://www.canopen.org/xml/1.1" xsi:type="q2:ProfileBody_CommunicationNetwork_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar_1.xdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModificationDate="2026-06-02" fileModificationTime="11:05:49.8158807-07:00" fileVersion="" supportedLanguages="en" xmlns="">
       <ApplicationLayers>
         <q2:CANopenObjectList>
           <CANopenObject index="1000" name="device_type" objectType="7" PDOmapping="optional" uniqueIDRef="UID_OBJ_1000" />

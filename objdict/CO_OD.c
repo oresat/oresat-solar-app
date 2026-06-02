@@ -42,7 +42,6 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*1018*/ {0x4L, 0x0000L, 0x0000L, 0x0000L, 0x0000L},
 /*1019*/ 0x0L,
 /*1200*/ {{0x3L, 0x0600L, 0x0580L, 0x1L}},
-/*1A02*/ {0x2L, 0x40000910L, 0x40000A10L, 0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L},
 /*1F80*/ 0x0008L,
 /*2010*/ 0x00000000L,
 /*2011*/ 0x00000000L,
@@ -95,6 +94,7 @@ struct sCO_OD_PERSIST_COMM CO_OD_PERSIST_COMM = {
 /*1803*/ {0x6L, 0x40000480L, 0xFEL, 0x00, 0x0L, 0x2710, 0x0L}},
 /*1A00*/ {{0x4L, 0x40000110L, 0x40000210L, 0x40000310L, 0x40000410L, 0x0000L, 0x0000L, 0x0000L, 0x0000L},
 /*1A01*/ {0x4L, 0x40000510L, 0x40000610L, 0x40000710L, 0x40000810L, 0x0000L, 0x0000L, 0x0000L, 0x0000L},
+/*1A02*/ {0x2L, 0x40000910L, 0x40000A10L, 0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L},
 /*1A03*/ {0x6L, 0x40010108L, 0x40020108L, 0x40010208L, 0x40020208L, 0x40010308L, 0x40020308L, 0x0000L, 0x0000L}},
 
            CO_OD_FIRST_LAST_WORD,
@@ -206,15 +206,15 @@ struct sCO_OD_PERSIST_COMM CO_OD_PERSIST_COMM = {
 };
 
 /*0x1A02*/ const CO_OD_entryRecord_t OD_record1A02[9] = {
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].numberOfMappedApplicationObjectsInPDO, 0x0E, 0x1 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject1, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject2, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject3, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject4, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject5, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject6, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject7, 0x8E, 0x4 },
-           {(void*)&CO_OD_RAM.TPDOMappingParameter[2].applicationObject8, 0x8E, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].numberOfMappedApplicationObjectsInPDO, 0x0F, 0x1 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject1, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject2, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject3, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject4, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject5, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject6, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject7, 0x8F, 0x4 },
+           {(void*)&CO_OD_PERSIST_COMM.TPDOMappingParameter[2].applicationObject8, 0x8F, 0x4 },
 };
 
 /*0x1A03*/ const CO_OD_entryRecord_t OD_record1A03[9] = {

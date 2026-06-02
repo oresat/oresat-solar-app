@@ -107,7 +107,7 @@ static void handle_can(void *p1, void *p2, void *p3)
 		CO_OD_RAM.versions.fw_version[3] = '0';
 		CO_OD_RAM.versions.fw_version[4] = '1';
 		CO_UNLOCK_OD();
-#if 0
+#if 1
 		while (true) {
 			bool_t syncWas = false;
 

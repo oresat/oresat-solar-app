@@ -17,7 +17,7 @@
           <ProfileTechnology>CANopen</ProfileTechnology>
         </ISO15745Reference>
       </ProfileHeader>
-      <ProfileBody xmlns:q1="http://www.canopen.org/xml/1.1" xsi:type="q1:ProfileBody_Device_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModifiedBy="" fileModificationDate="2026-06-02" fileModificationTime="10:11:35.2393068-07:00" fileVersion="" supportedLanguages="en" xmlns="">
+      <ProfileBody xmlns:q1="http://www.canopen.org/xml/1.1" xsi:type="q1:ProfileBody_Device_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModifiedBy="" fileModificationDate="2026-06-02" fileModificationTime="11:05:06.7701389-07:00" fileVersion="" supportedLanguages="en" xmlns="">
         <q1:DeviceIdentity>
           <q1:vendorName>PSAS</q1:vendorName>
           <q1:vendorID>0</q1:vendorID>
@@ -75,7 +75,7 @@
                 <UDINT />
               </q1:varDeclaration>
             </q1:struct>
-            <q1:struct name="sdo_server_parameter" uniqueID="UID_REC_1200">
+            <q1:struct name="SDO server parameter" uniqueID="UID_REC_1200">
               <q1:varDeclaration name="highest_index_supported" uniqueID="UID_RECSUB_120000">
                 <USINT />
               </q1:varDeclaration>
@@ -745,8 +745,9 @@
               <q1:defaultValue value="0x00" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_OBJ_1200">
-              <label lang="en">sdo_server_parameter</label>
+              <label lang="en">SDO server parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1200" />
+              <q1:property name="CO_countLabel" value="SDO_SRV" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_120000" access="const">
               <label lang="en">highest_index_supported</label>
@@ -756,7 +757,7 @@
             <q1:parameter uniqueID="UID_SUB_120001">
               <label lang="en">cob_id_client_to_server</label>
               <UDINT />
-              <q1:defaultValue value="0x80000000" />
+              <q1:defaultValue value="$NODEID+0x600" />
               <q1:allowedValues>
                 <q1:range>
                   <minValue value="0" />
@@ -767,7 +768,7 @@
             <q1:parameter uniqueID="UID_SUB_120002">
               <label lang="en">cob_id_server_to_client</label>
               <UDINT />
-              <q1:defaultValue value="0x80000000" />
+              <q1:defaultValue value="$NODEID+0x580" />
               <q1:allowedValues>
                 <q1:range>
                   <minValue value="0" />
@@ -877,6 +878,7 @@
               <label lang="en">TPDO communication parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1800" />
               <q1:property name="CO_countLabel" value="TPDO" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180000">
               <label lang="en">Highest sub-index supported</label>
@@ -886,7 +888,7 @@
             <q1:parameter uniqueID="UID_SUB_180001" access="readWrite">
               <label lang="en">COB-ID used by TPDO</label>
               <UDINT />
-              <q1:defaultValue value="0x18C" />
+              <q1:defaultValue value="$NODEID+0x40000180" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180002" access="readWrite">
               <label lang="en">Transmission type</label>
@@ -917,6 +919,7 @@
               <label lang="en">TPDO communication parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1801" />
               <q1:property name="CO_countLabel" value="TPDO" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180100">
               <label lang="en">Highest sub-index supported</label>
@@ -926,7 +929,7 @@
             <q1:parameter uniqueID="UID_SUB_180101" access="readWrite">
               <label lang="en">COB-ID used by TPDO</label>
               <UDINT />
-              <q1:defaultValue value="0x28C" />
+              <q1:defaultValue value="$NODEID+0x40000280" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180102" access="readWrite">
               <label lang="en">Transmission type</label>
@@ -957,6 +960,7 @@
               <label lang="en">TPDO communication parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1802" />
               <q1:property name="CO_countLabel" value="TPDO" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180200">
               <label lang="en">Highest sub-index supported</label>
@@ -966,7 +970,7 @@
             <q1:parameter uniqueID="UID_SUB_180201" access="readWrite">
               <label lang="en">COB-ID used by TPDO</label>
               <UDINT />
-              <q1:defaultValue value="0x38C" />
+              <q1:defaultValue value="$NODEID+0x40000380" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180202" access="readWrite">
               <label lang="en">Transmission type</label>
@@ -997,6 +1001,7 @@
               <label lang="en">TPDO communication parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1803" />
               <q1:property name="CO_countLabel" value="TPDO" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180300">
               <label lang="en">Highest sub-index supported</label>
@@ -1006,7 +1011,7 @@
             <q1:parameter uniqueID="UID_SUB_180301" access="readWrite">
               <label lang="en">COB-ID used by TPDO</label>
               <UDINT />
-              <q1:defaultValue value="0x48C" />
+              <q1:defaultValue value="$NODEID+0x40000480" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_180302" access="readWrite">
               <label lang="en">Transmission type</label>
@@ -1036,6 +1041,7 @@
             <q1:parameter uniqueID="UID_OBJ_1A00">
               <label lang="en">TPDO mapping parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1A00" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_1A0000" access="readWrite">
               <label lang="en">Number of mapped application objects in PDO</label>
@@ -1085,6 +1091,7 @@
             <q1:parameter uniqueID="UID_OBJ_1A01">
               <label lang="en">TPDO mapping parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1A01" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_1A0100" access="readWrite">
               <label lang="en">Number of mapped application objects in PDO</label>
@@ -1134,6 +1141,7 @@
             <q1:parameter uniqueID="UID_OBJ_1A02">
               <label lang="en">TPDO mapping parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1A02" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_1A0200" access="readWrite">
               <label lang="en">Number of mapped application objects in PDO</label>
@@ -1183,6 +1191,7 @@
             <q1:parameter uniqueID="UID_OBJ_1A03">
               <label lang="en">TPDO mapping parameter</label>
               <q1:dataTypeIDRef uniqueIDRef="UID_REC_1A03" />
+              <q1:property name="CO_storageGroup" value="PERSIST_COMM" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_1A0300" access="readWrite">
               <label lang="en">Number of mapped application objects in PDO</label>
@@ -1232,6 +1241,7 @@
             <q1:parameter uniqueID="UID_OBJ_1F80" access="readWrite">
               <label lang="en">NMTStartup</label>
               <UDINT />
+              <q1:defaultValue value="8" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_OBJ_2010" access="readWrite">
               <label lang="en">scet</label>
@@ -1611,7 +1621,7 @@
           <ProfileTechnology>CANopen</ProfileTechnology>
         </ISO15745Reference>
       </ProfileHeader>
-      <ProfileBody xmlns:q2="http://www.canopen.org/xml/1.1" xsi:type="q2:ProfileBody_CommunicationNetwork_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModificationDate="2026-06-02" fileModificationTime="10:11:35.2393068-07:00" fileVersion="" supportedLanguages="en" xmlns="">
+      <ProfileBody xmlns:q2="http://www.canopen.org/xml/1.1" xsi:type="q2:ProfileBody_CommunicationNetwork_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModificationDate="2026-06-02" fileModificationTime="11:05:06.7701389-07:00" fileVersion="" supportedLanguages="en" xmlns="">
         <ApplicationLayers>
           <q2:CANopenObjectList>
             <CANopenObject index="1000" name="device_type" objectType="7" PDOmapping="optional" uniqueIDRef="UID_OBJ_1000" />
@@ -1656,10 +1666,10 @@
               <CANopenSubObject subIndex="01" name="Communication error" objectType="7" PDOmapping="no" uniqueIDRef="UID_SUB_102901" />
               <CANopenSubObject subIndex="02" name="Profile- or manufacturer-specific error" objectType="7" PDOmapping="no" uniqueIDRef="UID_SUB_102902" />
             </CANopenObject>
-            <CANopenObject index="1200" name="sdo_server_parameter" objectType="9" uniqueIDRef="UID_OBJ_1200" subNumber="4">
+            <CANopenObject index="1200" name="SDO server parameter" objectType="9" uniqueIDRef="UID_OBJ_1200" subNumber="4">
               <CANopenSubObject subIndex="00" name="highest_index_supported" objectType="7" PDOmapping="no" uniqueIDRef="UID_SUB_120000" />
-              <CANopenSubObject subIndex="01" name="cob_id_client_to_server" objectType="7" PDOmapping="optional" uniqueIDRef="UID_SUB_120001" />
-              <CANopenSubObject subIndex="02" name="cob_id_server_to_client" objectType="7" PDOmapping="optional" uniqueIDRef="UID_SUB_120002" />
+              <CANopenSubObject subIndex="01" name="cob_id_client_to_server" objectType="7" PDOmapping="TPDO" uniqueIDRef="UID_SUB_120001" />
+              <CANopenSubObject subIndex="02" name="cob_id_server_to_client" objectType="7" PDOmapping="TPDO" uniqueIDRef="UID_SUB_120002" />
               <CANopenSubObject subIndex="03" name="node_id_od_sdo_client" objectType="7" PDOmapping="optional" uniqueIDRef="UID_SUB_120003" />
             </CANopenObject>
             <CANopenObject index="1400" name="RPDO communication parameter" objectType="9" uniqueIDRef="UID_OBJ_1400" subNumber="3">

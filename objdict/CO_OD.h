@@ -35,20 +35,6 @@
 
    typedef domain_t     DOMAIN;
 
-#ifndef timeOfDay_t
-    typedef union {
-        unsigned long long ullValue;
-        struct {
-            unsigned long ms:28;
-            unsigned reserved:4;
-            unsigned days:16;
-            unsigned reserved2:16;
-        };
-    }timeOfDay_t;
-#endif
-
-    typedef timeOfDay_t TIME_OF_DAY;
-    typedef timeOfDay_t TIME_DIFFERENCE;
 
 /*******************************************************************************
    FILE INFO:
@@ -480,7 +466,6 @@ struct sCO_OD_RAM{
 /*1018      */ OD_identity_t   identity;
 /*1019      */ UNSIGNED8      synchronous_counter_overflow_value;
 /*1200      */ OD_SDOServerParameter_t SDOServerParameter[1];
-/*1A02      */ OD_TPDOMappingParameter_t TPDOMappingParameter[4];
 /*1F80      */ UNSIGNED32     NMTStartup;
 /*2010      */ UNSIGNED64     scet;
 /*2011      */ UNSIGNED64     utc;
