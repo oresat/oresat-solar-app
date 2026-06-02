@@ -211,7 +211,7 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     int32_t working_iadj = initial_iadj;
     observe(&first);
     state->sample = first;
-    LOG_INF("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", (double)first.voltage_mV, (double)first.current_uA, (double)first.power_mW);
+    //LOG_INF("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", (double)first.voltage_mV, (double)first.current_uA, (double)first.power_mW);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
@@ -232,7 +232,7 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     float slope = (delta_power1 * delta_current2 + delta_power2 * delta_current1) / (2.0f * delta_current1 * delta_current2);
     //LOG_INF(" delta_power1:%f, delta_current1:%f, delta_power2:%f, delta_current2:%f", (double)delta_power1, (double)delta_current1, (double)delta_power2, (double)delta_current2);
 
-    LOG_INF("calculated slope as %f out of %f \n\r", (double)slope, (double)CRITICAL_SLOPE);
+    //LOG_INF("calculated slope as %f out of %f \n\r", (double)slope, (double)CRITICAL_SLOPE);
     dac_write_uV(initial_iadj);
     return slope;
 }
@@ -323,7 +323,9 @@ int track(void)
     //END CHARACTERIZATION SWEEP
 #endif
     //Only PAO implemented for the time being
+    CO_LOCK_OD();
     CO_OD_RAM.mppt_alg = MPPT_ALGORITHM_PAO;
+    CO_UNLOCK_OD();
 
     while(1) {
         iterate(&state);
@@ -338,6 +340,7 @@ int track(void)
         // FIXME: truncation looks suspicious
 
         //send stuff to OD_RAM (eventually sent over CAN)
+        CO_LOCK_OD();
         CO_OD_RAM.output.energy = (uint16_t) energy_mJ / 1000;
 
         CO_OD_RAM.output.voltage = (uint16_t) state.sample.voltage_mV;
@@ -352,6 +355,7 @@ int track(void)
         CO_OD_RAM.output.power_max = MAX(CO_OD_RAM.output.power_max, (uint16_t) state.sample.power_mW);
 
         CO_OD_RAM.lt1618_iadj = state.iadj_uV / 1000;
+        CO_UNLOCK_OD();
 
         k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
     }

@@ -496,7 +496,7 @@ struct sCO_OD_RAM{
 /*4002      */ OD_cell_2_t     cell_2;
 /*4003      */ UNSIGNED8      mppt_alg;
 /*4004      */ UNSIGNED16     lt1618_iadj;
-/*4005      */ UNSIGNED32     time_of_day;
+/*4005      */ OCTET_STRING   time_of_day[6];
 
                UNSIGNED32     LastWord;
 };
@@ -680,9 +680,10 @@ extern struct sCO_OD_PERSIST_COMM CO_OD_PERSIST_COMM;
         #define OD_lt1618_iadj_idx                                  0x4004
         #define OD_lt1618_iadj                                      CO_OD_RAM.lt1618_iadj
 
-/*4005, Data Type: UNSIGNED32 */
+/*4005, Data Type: OCTET_STRING */
         #define OD_time_of_day_idx                                  0x4005
         #define OD_time_of_day                                      CO_OD_RAM.time_of_day
+        #define ODL_time_of_day_stringLength                        6
 
 #endif
 // clang-format on

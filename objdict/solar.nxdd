@@ -17,7 +17,7 @@
           <ProfileTechnology>CANopen</ProfileTechnology>
         </ISO15745Reference>
       </ProfileHeader>
-      <ProfileBody xmlns:q1="http://www.canopen.org/xml/1.1" xsi:type="q1:ProfileBody_Device_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModifiedBy="" fileModificationDate="2026-06-01" fileModificationTime="00:05:12.2275478-07:00" fileVersion="" supportedLanguages="en" xmlns="">
+      <ProfileBody xmlns:q1="http://www.canopen.org/xml/1.1" xsi:type="q1:ProfileBody_Device_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModifiedBy="" fileModificationDate="2026-06-02" fileModificationTime="10:11:35.2393068-07:00" fileVersion="" supportedLanguages="en" xmlns="">
         <q1:DeviceIdentity>
           <q1:vendorName>PSAS</q1:vendorName>
           <q1:vendorID>0</q1:vendorID>
@@ -836,7 +836,7 @@
             <q1:parameter uniqueID="UID_SUB_160001" access="readWrite">
               <label lang="en">Application object 1</label>
               <UDINT />
-              <q1:defaultValue value="0x40050020" />
+              <q1:defaultValue value="0x40050030" />
             </q1:parameter>
             <q1:parameter uniqueID="UID_SUB_160002" access="readWrite">
               <label lang="en">Application object 2</label>
@@ -1589,11 +1589,10 @@
                 </q1:range>
               </q1:allowedValues>
             </q1:parameter>
-            <q1:parameter uniqueID="UID_OBJ_4005">
+            <q1:parameter uniqueID="UID_OBJ_4005" access="readWrite">
               <label lang="en">time_of_day</label>
-              <UDINT />
-              <q1:defaultValue value="0" />
-              <q1:property name="CO_accessSRDO" value="rx" />
+              <BITSTRING />
+              <q1:defaultValue value="00 00 00 00 00 00" />
             </q1:parameter>
           </q1:parameterList>
         </q1:ApplicationProcess>
@@ -1612,7 +1611,7 @@
           <ProfileTechnology>CANopen</ProfileTechnology>
         </ISO15745Reference>
       </ProfileHeader>
-      <ProfileBody xmlns:q2="http://www.canopen.org/xml/1.1" xsi:type="q2:ProfileBody_CommunicationNetwork_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModificationDate="2026-06-01" fileModificationTime="00:05:12.2275478-07:00" fileVersion="" supportedLanguages="en" xmlns="">
+      <ProfileBody xmlns:q2="http://www.canopen.org/xml/1.1" xsi:type="q2:ProfileBody_CommunicationNetwork_CANopen" formatName="CANopen" formatVersion="1.0" fileName="solar.nxdd" fileCreator="" fileCreationDate="2026-06-01" fileCreationTime="02:06:00.0000000-07:00" fileModificationDate="2026-06-02" fileModificationTime="10:11:35.2393068-07:00" fileVersion="" supportedLanguages="en" xmlns="">
         <ApplicationLayers>
           <q2:CANopenObjectList>
             <CANopenObject index="1000" name="device_type" objectType="7" PDOmapping="optional" uniqueIDRef="UID_OBJ_1000" />
@@ -1806,7 +1805,7 @@
             </CANopenObject>
             <CANopenObject index="4003" name="mppt_alg" objectType="7" PDOmapping="optional" uniqueIDRef="UID_OBJ_4003" />
             <CANopenObject index="4004" name="lt1618_iadj" objectType="7" PDOmapping="optional" uniqueIDRef="UID_OBJ_4004" />
-            <CANopenObject index="4005" name="time_of_day" objectType="7" PDOmapping="optional" uniqueIDRef="UID_OBJ_4005" />
+            <CANopenObject index="4005" name="time_of_day" objectType="7" PDOmapping="RPDO" uniqueIDRef="UID_OBJ_4005" />
           </q2:CANopenObjectList>
           <dummyUsage>
             <dummy entry="Dummy0001=0" />
