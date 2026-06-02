@@ -480,8 +480,7 @@ struct sCO_OD_RAM{
 /*1018      */ OD_identity_t   identity;
 /*1019      */ UNSIGNED8      synchronous_counter_overflow_value;
 /*1200      */ OD_SDOServerParameter_t SDOServerParameter[1];
-/*1800      */ OD_TPDOCommunicationParameter_t TPDOCommunicationParameter[4];
-/*1A00      */ OD_TPDOMappingParameter_t TPDOMappingParameter[4];
+/*1A02      */ OD_TPDOMappingParameter_t TPDOMappingParameter[4];
 /*1F80      */ UNSIGNED32     NMTStartup;
 /*2010      */ UNSIGNED64     scet;
 /*2011      */ UNSIGNED64     utc;
@@ -525,6 +524,8 @@ struct sCO_OD_PERSIST_COMM{
 /*1029      */ UNSIGNED8       errorBehavior[2];
 /*1400      */ OD_RPDOCommunicationParameter_t RPDOCommunicationParameter[1];
 /*1600      */ OD_RPDOMappingParameter_t RPDOMappingParameter[1];
+/*1800      */ OD_TPDOCommunicationParameter_t TPDOCommunicationParameter[4];
+/*1A00      */ OD_TPDOMappingParameter_t TPDOMappingParameter[4];
 
                UNSIGNED32     LastWord;
 };
@@ -617,11 +618,11 @@ extern struct sCO_OD_PERSIST_COMM CO_OD_PERSIST_COMM;
 
 /*1800, Data Type: TPDOCommunicationParameter_t */
         #define OD_TPDOCommunicationParameter_idx                   0x1800
-        #define OD_TPDOCommunicationParameter                       CO_OD_RAM.TPDOCommunicationParameter
+        #define OD_TPDOCommunicationParameter                       CO_OD_PERSIST_COMM.TPDOCommunicationParameter
 
 /*1A00, Data Type: TPDOMappingParameter_t */
         #define OD_TPDOMappingParameter_idx                         0x1A00
-        #define OD_TPDOMappingParameter                             CO_OD_RAM.TPDOMappingParameter
+        #define OD_TPDOMappingParameter                             CO_OD_PERSIST_COMM.TPDOMappingParameter
 
 /*1F80, Data Type: UNSIGNED32 */
         #define OD_NMTStartup_idx                                   0x1F80
