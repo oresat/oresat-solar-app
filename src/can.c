@@ -1,14 +1,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/logging/log.h>
 #include <canopennode.h>
 #include <CO_OD.h>
 //#include <board_sensors.h>
 #include <oresat.h>
+
+#include "can_util.h"
 
 LOG_MODULE_REGISTER(can_thread, LOG_LEVEL_DBG);
 
@@ -40,11 +43,19 @@ static void handle_can(void *p1, void *p2, void *p3)
 	int64_t timestamp;
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	struct canopen_context can = {.dev = CAN_INTERFACE};
-	uint8_t node_id = oresat_get_node_id();
+	uint8_t node_id = DEFAULT_NODE_ID;
 
 	k_thread_name_set(can_id, "can_thread");
 
 	LOG_INF("Starting CAN thread");
+
+	err = settings_subsys_init();
+	if (err) {
+		LOG_ERR("settings subsys initialization: fail (err %d)\n", err);
+	} else {
+		store_node_id(0x10);
+		node_id = load_node_id();
+	}
 
 	// Confirm a newly booted MCUboot image if self-tests pass
 	if (!IS_ENABLED(CONFIG_BOOTLOADER_MCUBOOT)) {

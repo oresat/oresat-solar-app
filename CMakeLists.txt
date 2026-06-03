@@ -19,6 +19,7 @@ target_sources_ifdef(CONFIG_BLINK        app PRIVATE src/blink.c)
 #target_sources_ifdef(CONFIG_DAC         app PRIVATE src/dac.c)
 target_sources_ifdef(CONFIG_SOLAR        app PRIVATE src/solar.c)
 target_sources_ifdef(CONFIG_CAN_INTF     app PRIVATE src/can.c)
+target_sources_ifdef(CONFIG_CAN_INTF     app PRIVATE src/can_util.c)
 target_sources_ifdef(CONFIG_CAN_INTF     app PRIVATE objdict/CO_OD.c)
 zephyr_include_directories(objdict)
 
