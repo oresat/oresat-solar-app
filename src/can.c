@@ -51,10 +51,17 @@ static void handle_can(void *p1, void *p2, void *p3)
 
 	err = settings_subsys_init();
 	if (err) {
-		LOG_ERR("settings subsys initialization: fail (err %d)\n", err);
+		LOG_ERR("settings subsys initialization: fail (err %d)", err);
 	} else {
-		store_node_id(0x10);
 		node_id = load_node_id();
+		if (node_id == DEFAULT_NODE_ID) {
+			LOG_WRN("CAN node id has not been set!");
+#if defined(CONFIG_SHELL)
+			LOG_WRN("--> Use shell command to set (type help).");
+#else
+			LOG_WRN("--> Firmware not built with CONFIG_SHELL=y. Rebuild and flash to update CAN node id.");
+#endif
+		}
 	}
 
 	// Confirm a newly booted MCUboot image if self-tests pass
@@ -87,7 +94,7 @@ static void handle_can(void *p1, void *p2, void *p3)
 		__ASSERT(false, "Fatal error");
 	}
 
-	LOG_INF("Starting CANopenNode (node_id=%u, bitrate=%u kbps)",
+	LOG_INF("Starting CANopenNode (node_id=0x%02x, bitrate=%u kbps)",
 			(unsigned)node_id, (unsigned)CAN_BITRATE);
 
 	while (reset != CO_RESET_APP) {
