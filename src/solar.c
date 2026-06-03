@@ -17,7 +17,7 @@
 #include <canopennode.h>
 #include <CO_OD.h>
 
-LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 
 // CAN data debug logging
 //#define DUMP_SOLAR_DATA 1
@@ -214,17 +214,17 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     int32_t working_iadj = initial_iadj;
     observe(&first);
     state->sample = first;
-    LOG_INF("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", (double)first.voltage_mV, (double)first.current_uA, (double)first.power_mW);
+    LOG_DBG("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", (double)first.voltage_mV, (double)first.current_uA, (double)first.power_mW);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
     observe(&second);
-    //LOG_INF("second sample: voltage: %f [mV], current: %f [uA]", (double)second.voltage_mV, (double)second.current_uA);
+    //LOG_DBG("second sample: voltage: %f [mV], current: %f [uA]", (double)second.voltage_mV, (double)second.current_uA);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
     observe(&third);
-    //LOG_INF("third sample: voltage: %f [mV], current: %f [uA]", (double)third.voltage_mV, (double)third.current_uA);
+    //LOG_DBG("third sample: voltage: %f [mV], current: %f [uA]", (double)third.voltage_mV, (double)third.current_uA);
 
     float delta_power1 = first.power_mW - second.power_mW;
     float delta_current1 = first.current_uA - second.current_uA;
@@ -233,9 +233,9 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     float delta_current2 = second.current_uA - third.current_uA;
 
     float slope = (delta_power1 * delta_current2 + delta_power2 * delta_current1) / (2.0f * delta_current1 * delta_current2);
-    //LOG_INF(" delta_power1:%f, delta_current1:%f, delta_power2:%f, delta_current2:%f", (double)delta_power1, (double)delta_current1, (double)delta_power2, (double)delta_current2);
+    //LOG_DBG(" delta_power1:%f, delta_current1:%f, delta_power2:%f, delta_current2:%f", (double)delta_power1, (double)delta_current1, (double)delta_power2, (double)delta_current2);
 
-    LOG_INF("calculated slope as %f out of %f \n\r", (double)slope, (double)CRITICAL_SLOPE);
+    LOG_DBG("calculated slope as %f out of %f \n\r", (double)slope, (double)CRITICAL_SLOPE);
     dac_write_uV(initial_iadj);
     return slope;
 }
