@@ -159,13 +159,16 @@
 		};
 		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x00014000 DT_SIZE_K(984)>;
+			reg = <0x00014000 DT_SIZE_K(968)>;
 		};
 		slot1_partition: partition@10A000 {
 			label = "image-1";
-			reg = <0x0010A000 DT_SIZE_K(984)>;
+			reg = <0x0010A000 DT_SIZE_K(968)>;
 		};
-		/* storage_partition is placed in WINBOND flash memory*/
+		storage_partition: partition@1fc000 {
+			label = "storage";
+			reg = <0x001fc000 DT_SIZE_K(16)>;
+		};
 	};
 };
 

@@ -11,10 +11,9 @@
  * west build -t menuconfig for an interacive configuration
  * editor.
  */
-#include <stdio.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h> 
-#include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
 

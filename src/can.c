@@ -97,17 +97,6 @@ static void handle_can(void *p1, void *p2, void *p3)
 
 		LOG_INF("Waiting for CANopen requests...");
 
-		CO_LOCK_OD();
-		CO_OD_RAM.versions.hw_version[0] = '1';
-		CO_OD_RAM.versions.hw_version[0] = '.';
-		CO_OD_RAM.versions.hw_version[0] = '1';
-		CO_OD_RAM.versions.fw_version[0] = '0';
-		CO_OD_RAM.versions.fw_version[1] = '.';
-		CO_OD_RAM.versions.fw_version[2] = '0';
-		CO_OD_RAM.versions.fw_version[3] = '0';
-		CO_OD_RAM.versions.fw_version[4] = '1';
-		CO_UNLOCK_OD();
-#if 1
 		while (true) {
 			bool_t syncWas = false;
 
@@ -117,16 +106,11 @@ static void handle_can(void *p1, void *p2, void *p3)
 			if (wr_timeout_count++ >= 1000U) {
 				wr_timeout_count = 0U;
 
-				CO_LOCK_OD();
-				CO_OD_RAM.system.uptime = (uint32_t)k_uptime_ticks();
-				CO_UNLOCK_OD();
-
 				/* Read inputs */
 				CO_process_RPDO(CO, syncWas);
 
 				/* Write outputs */
 				CO_process_TPDO(CO, syncWas, timeout * 1000U * 1000U);
-				LOG_INF("updated uptime to: %u (0x%08x)", CO_OD_RAM.system.uptime, CO_OD_RAM.system.uptime);
 			}
 
 			reset = CO_process(CO, (uint16_t)elapsed, &timeout);
@@ -146,38 +130,6 @@ static void handle_can(void *p1, void *p2, void *p3)
 			}
 		}
 	}
-#else
-		while (true) {
-			bool_t syncWas = false;
-
-			timeout = 1000U;
-			timestamp = k_uptime_get();
-
-			CO_LOCK_OD();
-			CO_OD_RAM.system.uptime = (uint32_t)timestamp;
-			CO_UNLOCK_OD();
-
-			/* Read inputs */
-			CO_process_RPDO(CO, syncWas);
-
-			/* Write outputs */
-			CO_process_TPDO(CO, syncWas, timeout * 1000U);
-
-			reset = CO_process(CO, (uint16_t)elapsed, &timeout);
-			if (reset != CO_RESET_NOT) {
-				break;
-			}
-			LOG_INF("updated uptime to: %u (0x%08x)", CO_OD_RAM.system.uptime, CO_OD_RAM.system.uptime);
-
-			if (timeout > 0) {
-				k_sleep(K_MSEC(timeout));
-				elapsed = (uint32_t)k_uptime_delta(&timestamp);
-			} else {
-				elapsed = 0U;
-			}
-		}
-	}
-#endif
 	CO_delete(&can);
 	sys_reboot(SYS_REBOOT_COLD);
 }

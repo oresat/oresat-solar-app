@@ -19,6 +19,9 @@
 
 LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 
+// CAN data debug logging
+//#define DUMP_SOLAR_DATA 1
+
 /* ===  Thread Parameters  === */
 
 #define STACKSIZE               1024
@@ -327,6 +330,10 @@ int track(void)
     CO_OD_RAM.mppt_alg = MPPT_ALGORITHM_PAO;
     CO_UNLOCK_OD();
 
+#ifdef DUMP_SOLAR_DATA
+    char dump[sizeof(CO_OD_RAM.output) * 3 + 1] = {0};
+#endif
+
     while(1) {
         iterate(&state);
 
@@ -356,6 +363,20 @@ int track(void)
 
         CO_OD_RAM.lt1618_iadj = state.iadj_uV / 1000;
         CO_UNLOCK_OD();
+
+#ifdef DUMP_SOLAR_DATA
+        LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, mA:%u", energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV);
+
+        char *o = dump;
+        char *p = (char *)&CO_OD_RAM.output;
+        int len = sizeof(dump);
+        for (int i = 0; i < sizeof(CO_OD_RAM.output); i++) {
+            snprintk(o, len, "%02x ", *(p++));
+            len -= 3;
+            o += 3;
+        }
+        LOG_INF("output: %s", dump);
+#endif
 
         k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
     }
