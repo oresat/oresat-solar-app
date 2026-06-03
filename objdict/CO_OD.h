@@ -35,6 +35,20 @@
 
    typedef domain_t     DOMAIN;
 
+#ifndef timeOfDay_t
+    typedef union {
+        unsigned long long ullValue;
+        struct {
+            unsigned long ms:28;
+            unsigned reserved:4;
+            unsigned days:16;
+            unsigned reserved2:16;
+        };
+    }timeOfDay_t;
+#endif
+
+    typedef timeOfDay_t TIME_OF_DAY;
+    typedef timeOfDay_t TIME_DIFFERENCE;
 
 /*******************************************************************************
    FILE INFO:
@@ -78,7 +92,7 @@
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             38
+   #define CO_OD_NoOfElements             42
 
 
 /*******************************************************************************
@@ -466,6 +480,13 @@ struct sCO_OD_RAM{
 /*1018      */ OD_identity_t   identity;
 /*1019      */ UNSIGNED8      synchronous_counter_overflow_value;
 /*1200      */ OD_SDOServerParameter_t SDOServerParameter[1];
+
+// firmware update OD indexes:
+/*1F50      */ DOMAIN         program_data[1];
+/*1F51      */ UNSIGNED8      program_control[1];
+/*1F56      */ UNSIGNED32     program_software_id[1];
+/*1F57      */ UNSIGNED32     flash_status[1];
+
 /*1F80      */ UNSIGNED32     NMTStartup;
 /*2010      */ UNSIGNED64     scet;
 /*2011      */ UNSIGNED64     utc;
@@ -608,6 +629,30 @@ extern struct sCO_OD_PERSIST_COMM CO_OD_PERSIST_COMM;
 /*1A00, Data Type: TPDOMappingParameter_t */
         #define OD_TPDOMappingParameter_idx                         0x1A00
         #define OD_TPDOMappingParameter                             CO_OD_PERSIST_COMM.TPDOMappingParameter
+
+
+// firmware update OD indexes:
+
+/*1F50, Data Type: DOMAIN, Array[1] */
+#define OD_program_data                           CO_OD_RAM.program_data
+#define ODL_program_data_arrayLength              1
+#define ODA_program_data_programData              0
+
+/*1F51, Data Type: UNSIGNED8, Array[1] */
+#define OD_program_control                        CO_OD_RAM.program_control
+#define ODL_program_control_arrayLength           1
+#define ODA_program_control_programControl        0
+
+/*1F56, Data Type: UNSIGNED32, Array[1] */
+#define OD_program_software_id                    CO_OD_RAM.program_software_id
+#define ODL_program_software_id_arrayLength       1
+#define ODA_program_software_id_programSoftwareIdentification 0
+
+/*1F57, Data Type: UNSIGNED32, Array[1] */
+#define OD_flash_status                           CO_OD_RAM.flash_status
+#define ODL_flash_status_arrayLength              1
+#define ODA_flash_status_flashStatusIdentification 0
+
 
 /*1F80, Data Type: UNSIGNED32 */
         #define OD_NMTStartup_idx                                   0x1F80

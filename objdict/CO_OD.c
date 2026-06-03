@@ -42,6 +42,13 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*1018*/ {0x4L, 0x0000L, 0x0000L, 0x0000L, 0x0000L},
 /*1019*/ 0x0L,
 /*1200*/ {{0x3L, 0x0600L, 0x0580L, 0x1L}},
+
+// firmware update OD indexes:
+/*1F50*/ {0},
+/*1F51*/ {0x0L},
+/*1F56*/ {0x0000L},
+/*1F57*/ {0x0000L},
+
 /*1F80*/ 0x0008L,
 /*2010*/ 0x00000000L,
 /*2011*/ 0x00000000L,
@@ -299,6 +306,13 @@ const CO_OD_entry_t CO_OD[CO_OD_NoOfElements] = {
 {0x1A01, 0x08, 0x00,  0, (void*)&OD_record1A01},
 {0x1A02, 0x08, 0x00,  0, (void*)&OD_record1A02},
 {0x1A03, 0x08, 0x00,  0, (void*)&OD_record1A03},
+
+// firmware update OD indexes:
+{0x1F50, 0x01, 0x0A,  0, (void*)0},
+{0x1F51, 0x01, 0x0E,  1, (void*)&CO_OD_RAM.program_control[0]},
+{0x1F56, 0x01, 0x86,  4, (void*)&CO_OD_RAM.program_software_id[0]},
+{0x1F57, 0x01, 0x86,  4, (void*)&CO_OD_RAM.flash_status[0]},
+
 {0x1F80, 0x00, 0x8E,  4, (void*)&CO_OD_RAM.NMTStartup},
 {0x2010, 0x00, 0xBE,  8, (void*)&CO_OD_RAM.scet},
 {0x2011, 0x00, 0xBE,  8, (void*)&CO_OD_RAM.utc},
