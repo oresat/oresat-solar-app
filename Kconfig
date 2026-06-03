@@ -69,6 +69,13 @@ config CAN_INTF
 			  enable MCUBOOT or provide an EXTRA_CONF_FILE option to west that
 			  names an overlay file.
 
+		config CAN_ID_MUST_BE_SET
+			bool "Do not contine if CAN node id not set."
+			default y
+			help
+			  If enabled, do not perform normal functions if CAN node id
+			  is not stored in settings.
+
 	endif
 
 
