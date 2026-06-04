@@ -18,3 +18,9 @@ gen/
 
 # modules
 CANopenNode
+
+# analysis data
+*.ipynb_checkpoints
+*-checkpoint.ipynb
+*/.ipynb_checkpoints/*
+
