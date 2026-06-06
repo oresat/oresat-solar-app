@@ -265,7 +265,7 @@ int32_t calculate_step(MpptState* state)
     pt_slope = find_pt_slope(&newer, &older);
 
     pt_slope = pt_slope / ((float) IE_ARRAY_LEN);
-    LOG_INF("pt_slope %f", (double)pt_slope);
+    LOG_DBG("pt_slope %f", (double)pt_slope);
 #endif
 
 
@@ -275,7 +275,7 @@ int32_t calculate_step(MpptState* state)
 
 #if CC_ENABLE
     CC_step = pt_slope * CC_STEP_SCALE;
-    LOG_INF("CC_step is %f ", (double)CC_step);
+    LOG_DBG("CC_step is %f ", (double)CC_step);
 
     if (pt_slope < 0) {
         CC_critical_adjust = pt_slope * CC_NRATE;
@@ -288,8 +288,7 @@ int32_t calculate_step(MpptState* state)
 
     float ip_slope = find_ip_slope(state, state->iadj_uV);
     float reference_slope = CRITICAL_SLOPE - CC_critical_adjust;
-    LOG_INF("reference slope is %f, PMAX is %f, NMIN is %f ", 
-            (double)reference_slope, (double)CC_PMAX, (double)CC_NMIN);
+    LOG_DBG("reference slope is %f, PMAX is %f, NMIN is %f ", (double)reference_slope, (double)CC_PMAX, (double)CC_NMIN);
 
 #if CC_ENABLE
     if (reference_slope > CC_PMAX) {
@@ -297,7 +296,7 @@ int32_t calculate_step(MpptState* state)
     } else if (reference_slope < CC_NMIN) {
         reference_slope = CC_NMIN;
     }
-    LOG_INF("reference slope bounded to %f", (double)reference_slope);
+    LOG_DBG("reference slope bounded to %f", (double)reference_slope);
 #endif
 
     float slope_error = (ip_slope - reference_slope) * SLOPE_CORRECTION_FACTOR;
@@ -315,7 +314,7 @@ int32_t calculate_step(MpptState* state)
         step = VREF_STEP_POSITIVE_uV + CC_step;
     }
 
-    LOG_INF("end of calculate_step");
+    LOG_DBG("end of calculate_step");
     return step > MAX_STEP ? MAX_STEP : step;
 }
 
@@ -326,7 +325,7 @@ void iterate(MpptState* state)
 
     dac_write_uV(iadj_uV_perturbed);
     state->iadj_uV = iadj_uV_perturbed;
-    LOG_INF("iterated");
+    LOG_DBG("iterated");
 }
 
 int track(void)
@@ -379,8 +378,8 @@ int track(void)
         struct Sample sample;
         observe(&sample);
         //LOG_INF("%d %f %f %f %d", k_uptime_get(), sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
-       // LOG_INF("solar thread ran");
-        LOG_INF("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
+        //LOG_INF("solar thread ran");
+        LOG_DBG("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
         k_msleep(2);
     }
     //END CHARACTERIZATION SWEEP
@@ -393,6 +392,7 @@ int track(void)
 #ifdef DUMP_SOLAR_DATA
     char dump[sizeof(CO_OD_RAM.output) * 3 + 1] = {0};
 #endif
+    int loop = 0;
 
     while(1) {
 #if IE_ENABLE
@@ -431,8 +431,6 @@ int track(void)
         CO_UNLOCK_OD();
 
 #ifdef DUMP_SOLAR_DATA
-        LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, mA:%u", energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV);
-
         char *o = dump;
         char *p = (char *)&CO_OD_RAM.output;
         int len = sizeof(dump);
@@ -443,10 +441,11 @@ int track(void)
         }
         LOG_INF("output: %s", dump);
 #endif
-
-        ///send stuff to OD ram or something
+        if (loop++ > (1000 / ITERATION_PERIOD)) {
+            LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, iadj_uV:%u", energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV);
+            loop = 0;
+        }
         t_now = k_uptime_get(); // *TODO* reevaluate these timing calculations -- no longer constant interval between calls to interate()
-        LOG_INF("main looped");
         k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
     }
 
