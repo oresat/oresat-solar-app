@@ -45,14 +45,16 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 #define I_ADJ_MAX               1450000
 #define I_ADJ_MIN               0
 
-#define CRITICAL_SLOPE          0.00425f // mW/uA
-#define IADJ_SAMPLE_OFFSET_uV   25000
-#define SLOPE_CORRECTION_FACTOR 500.0f
-#define FLOAT_DIST_TO_ZERO      0.1
-#define VREF_STEP_NEGATIVE_uV   -16000
-#define VREF_STEP_POSITIVE_uV   (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
-#define MAX_STEP                100000 //cap steps so they aren't too big when dynamic
-#define CURRENT_SETTLE_TIME     2 //ms
+#define CRITICAL_SLOPE            0.00420// mW/uA
+#define IADJ_SAMPLE_OFFSET_uV 25000
+#define SLOPE_CORRECTION_FACTOR 500.0
+#define FLOAT_DIST_TO_ZERO 0.1
+#define VREF_STEP_NEGATIVE_uV             -16000
+#define VREF_STEP_POSITIVE_uV             (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
+#define MAX_STEP 100000 //cap steps so they aren't too big when dynamic
+#define CURRENT_SETTLE_TIME 2 //ms
+
+#define ITERATION_PERIOD 25
 
 #define ITERATION_PERIOD        50
 
@@ -319,9 +321,10 @@ int track(void)
         looping_iadj -= iadj_stepsize;
         struct Sample sample;
         observe(&sample);
-        LOG_INF("%f %f %f %d", (double)sample.voltage_mV, (double)sample.current_uA, (double)sample.power_mW, looping_iadj);
-        LOG_INF("solar thread ran");
-        k_msleep(10);
+        //LOG_INF("%d %f %f %f %d", k_uptime_get(), sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
+       // LOG_INF("solar thread ran");
+        LOG_INF("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
+        k_msleep(2);
     }
     //END CHARACTERIZATION SWEEP
 #endif
