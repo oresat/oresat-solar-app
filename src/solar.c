@@ -25,16 +25,18 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 
 
 /* ===  Algorithm Parameters  === */
-
-#define IE_ARRAY_LEN 4
-#define IE_SAMPLE_SPACING 8
-
 #define CC_ENABLE true //enable corner cutting
 #define CC_STEP_SCALE 400.0 //how does a trend effect our step size
 #define CC_PMAX 0.0045
 #define CC_PRATE 0.1
 #define CC_NMIN  0.0041
 #define CC_NRATE 0.1
+
+#define DL_ENABLE false
+
+#define IE_ENABLE DL_ENABLE || CC_ENABLE
+#define IE_ARRAY_LEN 4
+#define IE_SAMPLE_SPACING 8
 
 /* MPPT configuration */
 #define I_ADJ_FAILSAFE          1450000
@@ -204,14 +206,69 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     return slope;
 }
 
+float find_pt_slope(struct Sample* newer, struct Sample* older) {
+    float dp = (newer->power_mW) - (older->power_mW);
+    int32_t dt = newer->time - older->time; //FIX: NOT SURE THAT THIS HANDLES ZEPHYR TIME CORRECTLY
+    float dpdt = 0.0;
+    if (dt > 0) {
+        dpdt = dp / (float) dt;
+    }
+    return dpdt;
+}
+
+
+
 int32_t calculate_step(MpptState* state)
 {
+
+#if IE_ENABLE
+    float pt_slope = 0.0;
+
+    struct Sample newer = state->IE_samples[(state->index_loop_counter - 1) % IE_ARRAY_LEN];
+    struct Sample older = state->IE_samples[state->index_loop_counter % IE_ARRAY_LEN];
+    pt_slope = find_pt_slope(&newer, &older);
+
+    pt_slope = pt_slope / ((float) IE_ARRAY_LEN);
+    LOG_INF("pt_slope %f", pt_slope);
+#endif
+
+
+
     int32_t CC_step = 0;
     float CC_critical_adjust = 0.0;
+
+#if CC_ENABLE
+    CC_step = pt_slope * CC_STEP_SCALE;
+    LOG_INF("CC_step is %f ", CC_step);
+
+    if (pt_slope < 0) {
+        CC_critical_adjust = pt_slope * CC_NRATE;
+    } else if (pt_slope > 0) {
+        CC_critical_adjust = pt_slope * CC_PRATE;
+    }
+
+#endif
+
+
     float ip_slope = find_ip_slope(state, state->iadj_uV);
     float reference_slope = CRITICAL_SLOPE - CC_critical_adjust;
+    LOG_INF("reference slope is %f, PMAX is %f, NMIN is %f ", reference_slope, CC_PMAX, CC_NMIN);
+
+#if CC_ENABLE
+    if (reference_slope > CC_PMAX) {
+        reference_slope = CC_PMAX;
+    } else if (reference_slope < CC_NMIN) {
+        reference_slope = CC_NMIN;
+    }
+    LOG_INF("reference slope bounded to %f", reference_slope);
+#endif
 
     float slope_error = (ip_slope - reference_slope) * SLOPE_CORRECTION_FACTOR;
+
+#if DL_ENABLE
+    //TODO: dynamic laziness goes here
+#endif
+
 
     int32_t step = 0;
     if (slope_error < 0) {
@@ -281,23 +338,31 @@ int track()
     int32_t spacing_loop_counter = 0;
     int32_t main_iterations = 0;
 
-    //CHARACTARIZATION SWEEP
-    int iadj_stepsize = 2500; //uA
-    int looping_iadj = 1600000;
-    while(1) {
-        dac_write_uV(looping_iadj);
-        looping_iadj -= iadj_stepsize;
-        struct Sample sample;
-        observe(&sample);
-        //LOG_INF("%d %f %f %f %d", k_uptime_get(), sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
-       // LOG_INF("solar thread ran");
-        LOG_INF("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
-        k_msleep(2);
-    }
-    //END CHARACTARIZATION SWEEP
+    ////CHARACTARIZATION SWEEP
+    //int iadj_stepsize = 2500; //uA
+    //int looping_iadj = 1600000;
+    //while(1) {
+    //    dac_write_uV(looping_iadj);
+    //    looping_iadj -= iadj_stepsize;
+    //    struct Sample sample;
+    //    observe(&sample);
+    //    //LOG_INF("%d %f %f %f %d", k_uptime_get(), sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
+    //   // LOG_INF("solar thread ran");
+    //    LOG_INF("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
+    //    k_msleep(2);
+    //}
+    ////END CHARACTARIZATION SWEEP
 
     //FIX: don't know when thread should terminate...
     while(1) {
+
+
+#if IE_ENABLE
+        if (!(spacing_loop_counter % IE_SAMPLE_SPACING)) {
+            state.IE_samples[state.index_loop_counter % IE_ARRAY_LEN] = state.sample;
+            state.index_loop_counter++;
+        }
+#endif
 
 
         iterate(&state);
