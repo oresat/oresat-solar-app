@@ -1,1 +1,1 @@
-uptime,voltage_mV,current_uA,power_mW,iadj_uV
+current_uA,voltage_mV,power_mW
