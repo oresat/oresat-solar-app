@@ -29,11 +29,11 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 
 /* ===  Algorithm Parameters  === */
 #define CC_ENABLE               true //enable corner cutting
-#define CC_STEP_SCALE           400.0 //how does a trend effect our step size
-#define CC_PMAX                 0.0045
-#define CC_PRATE                0.1
-#define CC_NMIN                 0.0041
-#define CC_NRATE                0.1
+#define CC_STEP_SCALE           400.0f //how does a trend effect our step size
+#define CC_PMAX                 0.0045f
+#define CC_PRATE                0.1f
+#define CC_NMIN                 0.0041f
+#define CC_NRATE                0.1f
 
 #define DL_ENABLE               false
 
@@ -47,18 +47,16 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 #define I_ADJ_MAX               1450000
 #define I_ADJ_MIN               0
 
-#define CRITICAL_SLOPE            0.00420// mW/uA
-#define IADJ_SAMPLE_OFFSET_uV 25000
-#define SLOPE_CORRECTION_FACTOR 500.0
-#define FLOAT_DIST_TO_ZERO 0.1
-#define VREF_STEP_NEGATIVE_uV             -16000
-#define VREF_STEP_POSITIVE_uV             (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
-#define MAX_STEP 100000 //cap steps so they aren't too big when dynamic
-#define CURRENT_SETTLE_TIME 2 //ms
+#define CRITICAL_SLOPE          0.00420f // mW/uA
+#define IADJ_SAMPLE_OFFSET_uV   25000
+#define SLOPE_CORRECTION_FACTOR 500.0f
+#define FLOAT_DIST_TO_ZERO      0.1
+#define VREF_STEP_NEGATIVE_uV  -16000
+#define VREF_STEP_POSITIVE_uV   (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
+#define MAX_STEP                100000 //cap steps so they aren't too big when dynamic
+#define CURRENT_SETTLE_TIME     2 //ms
 
-#define ITERATION_PERIOD 40
-
-#define ITERATION_PERIOD        50
+#define ITERATION_PERIOD        40
 
 /* === Peripheral Parameters === */
 
@@ -267,7 +265,7 @@ int32_t calculate_step(MpptState* state)
     pt_slope = find_pt_slope(&newer, &older);
 
     pt_slope = pt_slope / ((float) IE_ARRAY_LEN);
-    LOG_INF("pt_slope %f", pt_slope);
+    LOG_INF("pt_slope %f", (double)pt_slope);
 #endif
 
 
@@ -277,7 +275,7 @@ int32_t calculate_step(MpptState* state)
 
 #if CC_ENABLE
     CC_step = pt_slope * CC_STEP_SCALE;
-    LOG_INF("CC_step is %f ", CC_step);
+    LOG_INF("CC_step is %f ", (double)CC_step);
 
     if (pt_slope < 0) {
         CC_critical_adjust = pt_slope * CC_NRATE;
@@ -290,7 +288,8 @@ int32_t calculate_step(MpptState* state)
 
     float ip_slope = find_ip_slope(state, state->iadj_uV);
     float reference_slope = CRITICAL_SLOPE - CC_critical_adjust;
-    LOG_INF("reference slope is %f, PMAX is %f, NMIN is %f ", reference_slope, CC_PMAX, CC_NMIN);
+    LOG_INF("reference slope is %f, PMAX is %f, NMIN is %f ", 
+            (double)reference_slope, (double)CC_PMAX, (double)CC_NMIN);
 
 #if CC_ENABLE
     if (reference_slope > CC_PMAX) {
@@ -298,7 +297,7 @@ int32_t calculate_step(MpptState* state)
     } else if (reference_slope < CC_NMIN) {
         reference_slope = CC_NMIN;
     }
-    LOG_INF("reference slope bounded to %f", reference_slope);
+    LOG_INF("reference slope bounded to %f", (double)reference_slope);
 #endif
 
     float slope_error = (ip_slope - reference_slope) * SLOPE_CORRECTION_FACTOR;
