@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 #define MAX_STEP 100000 //cap steps so they aren't too big when dynamic
 #define CURRENT_SETTLE_TIME 2 //ms
 
-#define ITERATION_PERIOD 25
+#define ITERATION_PERIOD 40
 
 #define ITERATION_PERIOD        50
 
@@ -307,16 +307,16 @@ int32_t calculate_step(MpptState* state)
     //TODO: dynamic laziness goes here
 #endif
 
-
     int32_t step = 0;
     if (slope_error < 0) {
-        step = VREF_STEP_POSITIVE_uV * (slope_error * -1) + CC_step;
+        step = (int32_t) (VREF_STEP_POSITIVE_uV * (-slope_error) + CC_step);
     } else if (slope_error > 0) {
         step = VREF_STEP_NEGATIVE_uV + CC_step;
     } else {
         step = VREF_STEP_POSITIVE_uV + CC_step;
     }
 
+    LOG_INF("end of calculate_step");
     return step > MAX_STEP ? MAX_STEP : step;
 }
 
@@ -327,6 +327,7 @@ void iterate(MpptState* state)
 
     dac_write_uV(iadj_uV_perturbed);
     state->iadj_uV = iadj_uV_perturbed;
+    LOG_INF("iterated");
 }
 
 int track(void)
@@ -444,6 +445,9 @@ int track(void)
         LOG_INF("output: %s", dump);
 #endif
 
+        ///send stuff to OD ram or something
+        t_now = k_uptime_get(); // *TODO* reevaluate these timing calculations -- no longer constant interval between calls to interate()
+        LOG_INF("main looped");
         k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
     }
 
