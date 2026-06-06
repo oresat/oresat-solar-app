@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define I_ADJ_MAX               1450000
 #define I_ADJ_MIN               0
 
-#define CRITICAL_SLOPE            0.00425// mW/uA
+#define CRITICAL_SLOPE            0.00420// mW/uA
 #define IADJ_SAMPLE_OFFSET_uV 25000
 #define SLOPE_CORRECTION_FACTOR 500.0
 #define FLOAT_DIST_TO_ZERO 0.1
@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define MAX_STEP 100000 //cap steps so they aren't too big when dynamic
 #define CURRENT_SETTLE_TIME 2 //ms
 
-#define ITERATION_PERIOD 50
+#define ITERATION_PERIOD 25
 
 
 /* === Peripheral Parameters === */
@@ -281,19 +281,20 @@ int track()
     int32_t spacing_loop_counter = 0;
     int32_t main_iterations = 0;
 
-    ////CHARACTARIZATION SWEEP
-    //int iadj_stepsize = 2500; //uA
-    //int looping_iadj = 1600000;
-    //while(1) {
-    //    dac_write_uV(looping_iadj);
-    //    looping_iadj -= iadj_stepsize;
-    //    struct Sample sample;
-    //    observe(&sample);
-    //    LOG_INF("%f %f %f %d", sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
-    //    LOG_INF("solar thread ran");
-    //    k_msleep(10);
-    //}
-    ////END CHARACTARIZATION SWEEP
+    //CHARACTARIZATION SWEEP
+    int iadj_stepsize = 2500; //uA
+    int looping_iadj = 1600000;
+    while(1) {
+        dac_write_uV(looping_iadj);
+        looping_iadj -= iadj_stepsize;
+        struct Sample sample;
+        observe(&sample);
+        //LOG_INF("%d %f %f %f %d", k_uptime_get(), sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
+       // LOG_INF("solar thread ran");
+        LOG_INF("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
+        k_msleep(2);
+    }
+    //END CHARACTARIZATION SWEEP
 
     //FIX: don't know when thread should terminate...
     while(1) {
