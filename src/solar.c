@@ -405,9 +405,7 @@ int track(void)
 
         spacing_loop_counter += 1;
 
-        t_last = t_now;
-        t_now = state.sample.time;
-        energy_mJ += state.sample.power_mW * (t_now - t_last) * 1000; //convert ms to s
+        energy_mJ += state.sample.power_mW * (state.sample.time - t_last) * 1000; //convert ms to s
 
         // Dividing by 1k to convert to joules and truncate to 16 bits for the OD.
         // FIXME: truncation looks suspicious
@@ -445,8 +443,13 @@ int track(void)
             LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, iadj_uV:%u", energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV);
             loop = 0;
         }
-        t_now = k_uptime_get(); // *TODO* reevaluate these timing calculations -- no longer constant interval between calls to interate()
-        k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
+        t_now = k_uptime_get();
+        int32_t t_sleep = ITERATION_PERIOD - (t_now - t_last);
+
+        if (tsleep <= 0) {
+            t_sleep = 1;
+        }
+        t_last = t_now;
     }
 
     return 0;
