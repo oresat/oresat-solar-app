@@ -14,6 +14,10 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
+
+#include <version.h>
+#include <app_version.h>
 #include <canopennode.h>
 #include <CO_OD.h>
 
@@ -56,6 +60,9 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 #define MAX_STEP                100000 //cap steps so they aren't too big when dynamic
 #define CURRENT_SETTLE_TIME     2 //ms
 
+#define MAX_I2C_RECOVERY_RETRIES 10
+#define MAX_RECOVERY_BOOTS      10
+
 #define ITERATION_PERIOD        40
 
 /* === Peripheral Parameters === */
@@ -81,6 +88,7 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
 #define DAC_UV_PER_BIT (DAC_VDDA_uV / DAC_VALUES)
 
 /* === Peripheral Structs === */
+static int rec_count;
 
 static const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina226);
 const struct device *const dac1_dev = DEVICE_DT_GET(DAC1_NODE);
@@ -102,7 +110,87 @@ static const struct gpio_dt_spec cell1_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, 
 static const struct gpio_dt_spec cell2_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell2_tmp101_alert_gpios);
 static const struct gpio_dt_spec lt1618_enable = GPIO_DT_SPEC_GET(BP_NODE, lt1618_enable_gpios);
 
+static int init_ina226(void);
+
 /**************************************************/
+
+static uint8_t load_recovery_count(void)
+{
+    int rc;
+    uint8_t recovery_count = 0;
+
+    settings_load();
+
+    rc = settings_load_one("recovery_count", (void *)&recovery_count, sizeof(recovery_count));
+    if (rc < 0) {
+        LOG_ERR("Error loading recovery_count from settings: %d", rc);
+    }
+    if (!recovery_count) {
+        recovery_count = 0;
+    }
+    return recovery_count;
+}
+
+static int store_recovery_count(uint8_t recovery_count)
+{
+    int rc;
+
+    rc = settings_save_one("recovery_count", &recovery_count, sizeof(recovery_count));
+    if (rc < 0) {
+        LOG_ERR("Error saving recovery_count to settings: %d", rc);
+    }
+    return rc;
+}
+
+static int recover_i2c_bus(void)
+{
+    int ret;
+    int attempt;
+
+    ret = settings_subsys_init();
+    if (ret) {
+        LOG_ERR("settings subsys initialization: fail (err %d)", ret);
+    }
+
+    rec_count = load_recovery_count();
+    LOG_INF("  I2C recovery count: %d", rec_count);
+    if (rec_count >= MAX_RECOVERY_BOOTS) {
+        LOG_ERR("Unable to recover i2c bus after 10 resets. Will stop trying.");
+    }
+
+    for (attempt = 1; attempt < MAX_I2C_RECOVERY_RETRIES; attempt++) {
+        ret = i2c_recover_bus(DEVICE_DT_GET(DT_NODELABEL(flexcomm0_lpi2c0)));
+        if (ret) {
+            LOG_WRN("I2C bus is stuck (err: %d); recovery failed", ret);
+        } else { // do something to verify that it is actually working
+            if (device_is_ready(ina)) {
+                break;
+            }
+            ret = init_ina226();
+            if (!ret) {
+                LOG_INF("I2C bus recovery successful.");
+                break;
+            }
+        }
+        k_sleep(K_MSEC(10));
+    }
+
+    if (ret < 0) {
+        if (rec_count < MAX_RECOVERY_BOOTS) {
+            store_recovery_count(rec_count + 1);
+            settings_commit();
+            k_sleep(K_MSEC(500)); // give settings time to be written to flash
+            __ASSERT(ret < 0, "Giving up on soft reset of IMU. Rebooting.");
+        } else {
+            LOG_ERR("Cannot recover i2c bus after 10 reboot attempts. Giving up.");
+        }
+    } else if (rec_count) {
+        LOG_INF("Resetting recovery count. Recovery successful");
+        store_recovery_count(0); // reset since we're good
+    }
+
+    return ret;
+}
 
 static int gpios_init(void)
 {
@@ -154,12 +242,20 @@ typedef struct {
 
 static int init_ina226(void)
 {
+    int ret = 0;
+
     LOG_INF("Starting INA226 reading");
 
     if (!device_is_ready(ina)) {
         LOG_ERR("Device %s is not ready.", ina->name);
+        ret = device_init(ina);
+        if (ret == -EALREADY) {
+            LOG_DBG("Device already initialized.");
+        } else if (ret) {
+            LOG_ERR("Error reinitializing the ina226: %d", ret);
+        }
     }
-    return 0;
+    return ret;
 }
 
 uint32_t saturate_uint32_t(const int64_t v, const uint32_t min, const uint32_t max) {
@@ -332,7 +428,11 @@ int track(void)
 {
     LOG_INF("Starting Solar Tracking...");
     int ret;
-    i2c_recover_bus(DEVICE_DT_GET(DT_NODELABEL(flexcomm0_lpi2c0)));
+
+    ret = recover_i2c_bus();
+    if (ret != 0) {
+        LOG_ERR("Unable to recover bus. Continuing, but expect issues.");
+    }
 
     ret = gpios_init();
     if (ret != 0) {
@@ -413,7 +513,12 @@ int track(void)
         // FIXME: truncation looks suspicious
 
         //send stuff to OD_RAM (eventually sent over CAN)
+
+        size_t ver_size = sizeof(CO_OD_RAM.versions.fw_version);
+
         CO_LOCK_OD();
+        strncpy(CO_OD_RAM.versions.fw_version, &APP_VERSION_STRING[6], ver_size);
+
         CO_OD_RAM.output.energy = (uint16_t) energy_mJ / 1000;
 
         CO_OD_RAM.output.voltage = (uint16_t) state.sample.voltage_mV;

@@ -16,6 +16,9 @@ NOTE:
 | mcxn947_solar_card with shell | `west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -- -DEXTRA_CONF_FILE=overlay_shell.conf` |
 | mcxn947_solar_card with MCUboot | `west build -p always -b mcxn947_solar_card/mcxn947/cpu0 --sysbuild -- -DBOARD_ROOT=$PWD` |
 
+> NOTE: the section below only gives general instructions. Specific steps below (like for setting the CAN node id) are self-contained
+> in the section.
+
 # Building and flashing without the bootloader
 This runs the build and the flash faster when working in the lab.
 However, this will of course not be able to be remotely updated over
@@ -50,7 +53,7 @@ This requires three steps in practice:
 ## Enabling the shell
 Do a build with the `overlay_shell.conf` file as a parameter to `west build`:
 ```
-$ west build -- -DEXTRA_CONF_FILE=overlay_shell.conf
+$ west build -- -DEXTRA_CONF_FILE=overlay_shell.conf west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -- -DEXTRA_CONF_FILE=overlay_shell.conf -DCONFIG_MCUBOOT_ALLOWED=n
 ```
 Flash as explained earlier.
 
@@ -58,7 +61,7 @@ Flash as explained earlier.
 The terminal will continue to show whatever log messages are currently enabled.
 But it will also show, at the bottom of the scroll, a prompt:
 ```
-uart:~$
+uart:~$ nodeid
 ```
 Enter `help` for help.
 Enter `nodeid`<enter> to see the current nodeid.
