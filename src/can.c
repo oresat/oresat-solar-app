@@ -129,14 +129,14 @@ static void handle_can(void *p1, void *p2, void *p3)
 			timeout = 1U;
 			timestamp = k_uptime_get();
 
-			if (wr_timeout_count++ >= 1000U) {
+			if (wr_timeout_count++ >= 100U) {
 				wr_timeout_count = 0U;
 
 				/* Read inputs */
 				CO_process_RPDO(CO, syncWas);
 
 				/* Write outputs */
-				CO_process_TPDO(CO, syncWas, timeout * 1000U * 1000U);
+				CO_process_TPDO(CO, syncWas, timeout * 1000U * 100U);
 			}
 
 			reset = CO_process(CO, (uint16_t)elapsed, &timeout);
