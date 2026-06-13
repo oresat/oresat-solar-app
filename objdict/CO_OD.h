@@ -151,6 +151,7 @@
                UNSIGNED8      highest_index_supported;
                VISIBLE_STRING hw_version[3];
                VISIBLE_STRING configs_version[32];
+               VISIBLE_STRING olaf_version[5];
                VISIBLE_STRING fw_version[5];
                }              OD_versions_t;
 /*3003      */ typedef struct {
@@ -406,6 +407,7 @@
         #define OD_3002_0_versions_maxSubIndex                      0
         #define OD_3002_1_versions_hw_version                       1
         #define OD_3002_2_versions_configs_version                  2
+        #define OD_3002_3_versions_olaf_version                     3
         #define OD_3002_4_versions_fw_version                       4
 
 /*3003 */

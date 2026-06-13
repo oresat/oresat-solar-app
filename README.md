@@ -53,7 +53,7 @@ This requires three steps in practice:
 ## Enabling the shell
 Do a build with the `overlay_shell.conf` file as a parameter to `west build`:
 ```
-$ west build -- -DEXTRA_CONF_FILE=overlay_shell.conf west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -- -DEXTRA_CONF_FILE=overlay_shell.conf -DCONFIG_MCUBOOT_ALLOWED=n
+$ west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -- -DEXTRA_CONF_FILE=overlay_shell.conf -DCONFIG_MCUBOOT_ALLOWED=n
 ```
 Flash as explained earlier.
 
