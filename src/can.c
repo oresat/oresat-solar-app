@@ -13,7 +13,7 @@
 
 #include "can_util.h"
 
-LOG_MODULE_REGISTER(can_thread, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(can_thread, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INTERFACE (DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)))
 #define CAN_BITRATE (DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bitrate, \

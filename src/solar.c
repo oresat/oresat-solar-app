@@ -21,7 +21,7 @@
 #include <canopennode.h>
 #include <CO_OD.h>
 
-LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(oresat_solar2, CONFIG_LOG_DEFAULT_LEVEL);
 
 // CAN data debug logging
 //#define DUMP_SOLAR_DATA 1

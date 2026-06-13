@@ -20,7 +20,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(oresat_dac_ina226, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(oresat_dac_ina226, CONFIG_DAC_LOG_LEVEL);
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024

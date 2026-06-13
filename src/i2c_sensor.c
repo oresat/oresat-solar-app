@@ -17,7 +17,7 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(oresat_i2c_sensors, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(oresat_i2c_sensors, CONFIG_I2C_LOG_LEVEL);
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024

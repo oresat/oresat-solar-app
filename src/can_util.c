@@ -5,7 +5,7 @@
 
 #include "can_util.h"
 
-LOG_MODULE_REGISTER(can_util, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(can_util, CONFIG_CAN_LOG_LEVEL);
 
 uint8_t load_node_id(void)
 {
