@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(can_thread, LOG_LEVEL_DBG);
 
 #define CAN_THREAD_STACK_SIZE 2048
 #define CAN_THREAD_PRIORITY 0
+#define CAN_STARTUP_DELAY 250
+
 extern const k_tid_t can_id;
 
 static bool run_self_tests(void)
@@ -46,6 +48,7 @@ static void handle_can(void *p1, void *p2, void *p3)
 	uint8_t node_id = DEFAULT_NODE_ID;
 
 	k_thread_name_set(can_id, "can_thread");
+	k_sleep(K_MSEC(CAN_STARTUP_DELAY));
 
 	LOG_INF("Starting CAN thread");
 

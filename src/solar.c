@@ -158,6 +158,14 @@ static int recover_i2c_bus(void)
         LOG_ERR("Unable to recover i2c bus after 10 resets. Will stop trying.");
     }
 
+    if (device_is_ready(ina)) {
+        if (rec_count) {
+            LOG_INF("Resetting recovery count. Recovery successful");
+            store_recovery_count(0); // reset since we're good
+        }
+        return 0;
+    }
+
     for (attempt = 1; attempt < MAX_I2C_RECOVERY_RETRIES; attempt++) {
         ret = i2c_recover_bus(DEVICE_DT_GET(DT_NODELABEL(flexcomm0_lpi2c0)));
         if (ret) {
@@ -170,6 +178,8 @@ static int recover_i2c_bus(void)
             if (!ret) {
                 LOG_INF("I2C bus recovery successful.");
                 break;
+            } else {
+                LOG_ERR("Error initializing ina226: %d", ret);
             }
         }
         k_sleep(K_MSEC(10));

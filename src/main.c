@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(oresat_mcxn947_solar, LOG_LEVEL_DBG);
 
 int main(void)
 {
-	LOG_INF("\nOresat MCXN947 Solar Board App");
+	LOG_INF("Oresat MCXN947 Solar Board App");
 	LOG_INF("   Oresat   Board: %s", CONFIG_BOARD_TARGET);
 	LOG_INF("   App    Version: %s", APP_VERSION_STRING);
 	LOG_INF("   Zephyr Version: %s", KERNEL_VERSION_STRING);
