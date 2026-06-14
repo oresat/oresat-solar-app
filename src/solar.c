@@ -101,6 +101,8 @@ const struct dac_channel_cfg dac_ch_cfg = {
         .buffered = true,
     #endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 }; //TODO: specify averaging
+static const struct device *tmp1 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell1));
+static const struct device *tmp2 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell2));
 
 /* === GPIO data === */
 #define BP_NODE DT_NODELABEL(solargpios)
@@ -249,6 +251,93 @@ typedef struct {
     struct Sample IE_samples[IE_ARRAY_LEN];
     uint32_t index_loop_counter;
 } MpptState;
+
+
+static int init_tmp101(void)
+{
+	LOG_INF("Starting TMP101 reading");
+
+	if (!device_is_ready(tmp1)) {
+        LOG_ERR("tmp101 #1 not ready");
+        tmp1 = NULL;
+    }
+    if (!device_is_ready(tmp2)) {
+        LOG_ERR("tmp101 #2 not ready");
+        tmp2 = NULL;
+    }
+
+#if 0
+	sensor_attr_set(tmp1,
+			SENSOR_CHAN_AMBIENT_TEMP,
+			SENSOR_ATTR_TMP101_CONTINUOUS_CONVERSION_MODE,
+			NULL);
+
+#if CONFIG_APP_ENABLE_ONE_SHOT
+	enable_one_shot(tmp1);
+#endif
+
+#if CONFIG_APP_REPORT_TEMP_ALERTS
+	enable_temp_alerts(tmp1);
+#endif
+#endif
+
+	return 0;
+}
+
+static int get_temperature_continuous(const struct device *tmp101, double *tmp101_value)
+{
+
+	struct sensor_value temp_value;
+	const struct device_dt_nodelabels *labels = device_get_dt_nodelabels(tmp101);
+	const char *label;
+	int rc;
+
+	if (labels && labels->num_nodelabels) {
+		label = labels->nodelabels[0];
+	} else {
+		label = "unk";
+	}
+
+	rc = sensor_channel_get(tmp101,
+					SENSOR_CHAN_AMBIENT_TEMP,
+					&temp_value);
+	if (rc) {
+		LOG_ERR("Sensor_channel_get failed: %d", rc);
+		return rc;
+	}
+
+    *tmp101_value = sensor_value_to_double(&temp_value);
+	LOG_DBG("temperature from %s (%s) is %gC (%dC)", tmp101->name, label, *tmp101_value, (int8_t)*tmp101_value);
+	return 0;
+}
+
+static int handle_tmp101(double *tmp1_value, double *tmp2_value)
+{
+	int rc;
+
+    if (tmp1) {
+        rc = sensor_sample_fetch(tmp1);
+        if (rc) {
+            LOG_ERR("tmp1 sensor_sample_fetch failed: %d", rc);
+            return rc;
+        }
+        get_temperature_continuous(tmp1, tmp1_value);
+    } else {
+        *tmp1_value = 0;
+    }
+    if (tmp2) {
+        rc = sensor_sample_fetch(tmp2);
+        if (rc) {
+            LOG_ERR("tmp2 sensor_sample_fetch failed: %d", rc);
+            return rc;
+        }
+        get_temperature_continuous(tmp2, tmp2_value);
+    } else {
+        *tmp2_value = 0;
+    }
+
+	return 0;
+}
 
 static int init_ina226(void)
 {
@@ -451,6 +540,11 @@ int track(void)
     }
     init_ina226();
 
+    double tmp1_value;
+    double tmp2_value;
+
+    init_tmp101();
+
     /* Can we use the DAC? */
     if (!device_is_ready(dac1_dev)) {
         LOG_ERR("DAC1 device %s is not ready", dac1_dev->name);
@@ -512,6 +606,8 @@ int track(void)
         }
 #endif
         iterate(&state);
+        ret = handle_tmp101(&tmp1_value, &tmp2_value);
+        LOG_DBG("handle_tmp101(): %d", ret);
 
         spacing_loop_counter += 1;
 
@@ -543,6 +639,9 @@ int track(void)
         CO_OD_RAM.output.power_max = MAX(CO_OD_RAM.output.power_max, (uint16_t) state.sample.power_mW);
 
         CO_OD_RAM.lt1618_iadj = state.iadj_uV / 1000;
+
+        CO_OD_RAM.cell_1.temperature = (int8_t)tmp1_value;
+        CO_OD_RAM.cell_2.temperature = (int8_t)tmp2_value;
         CO_UNLOCK_OD();
 
 #ifdef DUMP_SOLAR_DATA
