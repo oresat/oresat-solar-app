@@ -656,7 +656,9 @@ int track(void)
         LOG_INF("output: %s", dump);
 #endif
         if (loop++ > (1000 / ITERATION_PERIOD)) {
-            LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, iadj_uV:%u", energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV);
+            LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, iadj_uV:%u cell_1_temp:%d, cell_2_temp:%d",
+                    energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV,
+                    (int8_t)tmp1_value, (int8_t)tmp2_value);
             loop = 0;
         }
         t_now = k_uptime_get(); // *TODO* reevaluate these timing calculations -- no longer constant interval between calls to interate()
