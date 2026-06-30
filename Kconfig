@@ -37,6 +37,48 @@ if SOLAR
 
 endif
 
+config CAN_INTF
+	bool "Enable sending CAN packets."
+	default y
+	select CAN
+	select CANOPENNODE
+	select USE_STM32_HAL_FLASH if SOC_STM32F091XC
+	select USE_STM32_HAL_FLASH_EX if SOC_STM32F091XC
+	select USE_STM32_HAL_CAN if SOC_STM32F091XC
+	help
+	  Enable CAN interface and send data from CO_OD.
+
+	if CAN_INTF && !SOC_STM32F091XC
+
+		config MCUBOOT_ALLOWED
+			bool "MCUboot allowed."
+			default y
+			select BOOTLOADER_MCUBOOT
+			select MCUBOOT_GENERATE_UNSIGNED_IMAGE
+			select FLASH
+			select FLASH_MAP
+			select STREAM_FLASH
+			select IMG_MANAGER
+			select MCUBOOT_GENERATE_CONFIRMED_IMAGE
+			select CANOPENNODE_PROGRAM_DOWNLOAD
+			help
+			  Define helper symbol CONFIG_MCUBOOT_ALLOWED for all supported
+			  architectures that have room for the required partitions in flash
+			  and have those partitions defined in the device tree. This
+			  eliminates the need for the user to either change prj.conf to
+			  enable MCUBOOT or provide an EXTRA_CONF_FILE option to west that
+			  names an overlay file.
+
+		config CAN_ID_MUST_BE_SET
+			bool "Do not contine if CAN node id not set."
+			default y
+			help
+			  If enabled, do not perform normal functions if CAN node id
+			  is not stored in settings.
+
+	endif
+
+
 endmenu
 
 source "Kconfig.zephyr"

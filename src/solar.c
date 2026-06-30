@@ -14,8 +14,17 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
 
-LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
+#include <version.h>
+#include <app_version.h>
+#include <canopennode.h>
+#include <CO_OD.h>
+
+LOG_MODULE_REGISTER(oresat_solar2, CONFIG_LOG_DEFAULT_LEVEL);
+
+// CAN data debug logging
+//#define DUMP_SOLAR_DATA 1
 
 /* ===  Thread Parameters  === */
 
@@ -23,16 +32,18 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define PRIORITY                7
 
 /* ===  Algorithm Parameters  === */
-
-#define IE_ARRAY_LEN 4
-#define IE_SAMPLE_SPACING 8
-
 #define CC_ENABLE               true //enable corner cutting
-#define CC_STEP_SCALE           400.0 //how does a trend effect our step size
-#define CC_PMAX                 0.0045
-#define CC_PRATE                0.1
-#define CC_NMIN                 0.0041
-#define CC_NRATE                0.1
+#define CC_STEP_SCALE           400.0f //how does a trend effect our step size
+#define CC_PMAX                 0.0045f
+#define CC_PRATE                0.1f
+#define CC_NMIN                 0.0041f
+#define CC_NRATE                0.1f
+
+#define DL_ENABLE               false
+
+#define IE_ENABLE               DL_ENABLE || CC_ENABLE
+#define IE_ARRAY_LEN            4
+#define IE_SAMPLE_SPACING       8
 
 /* MPPT configuration */
 #define I_ADJ_FAILSAFE          1450000
@@ -40,16 +51,19 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define I_ADJ_MAX               1450000
 #define I_ADJ_MIN               0
 
-#define CRITICAL_SLOPE          0.00425f // mW/uA
+#define CRITICAL_SLOPE          0.00420f // mW/uA
 #define IADJ_SAMPLE_OFFSET_uV   25000
 #define SLOPE_CORRECTION_FACTOR 500.0f
 #define FLOAT_DIST_TO_ZERO      0.1
-#define VREF_STEP_NEGATIVE_uV   -16000
+#define VREF_STEP_NEGATIVE_uV  -16000
 #define VREF_STEP_POSITIVE_uV   (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
 #define MAX_STEP                100000 //cap steps so they aren't too big when dynamic
 #define CURRENT_SETTLE_TIME     2 //ms
 
-#define ITERATION_PERIOD        50
+#define MAX_I2C_RECOVERY_RETRIES 10
+#define MAX_RECOVERY_BOOTS      10
+
+#define ITERATION_PERIOD        40
 
 /* === Peripheral Parameters === */
 
@@ -74,6 +88,7 @@ LOG_MODULE_REGISTER(oresat_solar2, LOG_LEVEL_DBG);
 #define DAC_UV_PER_BIT (DAC_VDDA_uV / DAC_VALUES)
 
 /* === Peripheral Structs === */
+static int rec_count;
 
 static const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina226);
 const struct device *const dac1_dev = DEVICE_DT_GET(DAC1_NODE);
@@ -86,14 +101,108 @@ const struct dac_channel_cfg dac_ch_cfg = {
         .buffered = true,
     #endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 }; //TODO: specify averaging
+static const struct device *tmp1 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell1));
+static const struct device *tmp2 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell2));
 
-/**************************************************/
+/* === GPIO data === */
 #define BP_NODE DT_NODELABEL(solargpios)
 
 static const struct gpio_dt_spec ina226_nalert = GPIO_DT_SPEC_GET(BP_NODE, ina226_nalert_gpios);
 static const struct gpio_dt_spec cell1_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell1_tmp101_alert_gpios);
 static const struct gpio_dt_spec cell2_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell2_tmp101_alert_gpios);
 static const struct gpio_dt_spec lt1618_enable = GPIO_DT_SPEC_GET(BP_NODE, lt1618_enable_gpios);
+
+static int init_ina226(void);
+
+/**************************************************/
+
+static uint8_t load_recovery_count(void)
+{
+    int rc;
+    uint8_t recovery_count = 0;
+
+    settings_load();
+
+    rc = settings_load_one("recovery_count", (void *)&recovery_count, sizeof(recovery_count));
+    if (rc < 0) {
+        LOG_ERR("Error loading recovery_count from settings: %d", rc);
+    }
+    if (!recovery_count) {
+        recovery_count = 0;
+    }
+    return recovery_count;
+}
+
+static int store_recovery_count(uint8_t recovery_count)
+{
+    int rc;
+
+    rc = settings_save_one("recovery_count", &recovery_count, sizeof(recovery_count));
+    if (rc < 0) {
+        LOG_ERR("Error saving recovery_count to settings: %d", rc);
+    }
+    return rc;
+}
+
+static int recover_i2c_bus(void)
+{
+    int ret;
+    int attempt;
+
+    ret = settings_subsys_init();
+    if (ret) {
+        LOG_ERR("settings subsys initialization: fail (err %d)", ret);
+    }
+
+    rec_count = load_recovery_count();
+    LOG_INF("  I2C recovery count: %d", rec_count);
+    if (rec_count >= MAX_RECOVERY_BOOTS) {
+        LOG_ERR("Unable to recover i2c bus after 10 resets. Will stop trying.");
+    }
+
+    if (device_is_ready(ina)) {
+        if (rec_count) {
+            LOG_INF("Resetting recovery count. Recovery successful");
+            store_recovery_count(0); // reset since we're good
+        }
+        return 0;
+    }
+
+    for (attempt = 1; attempt < MAX_I2C_RECOVERY_RETRIES; attempt++) {
+        ret = i2c_recover_bus(DEVICE_DT_GET(DT_NODELABEL(flexcomm0_lpi2c0)));
+        if (ret) {
+            LOG_WRN("I2C bus is stuck (err: %d); recovery failed", ret);
+        } else { // do something to verify that it is actually working
+            if (device_is_ready(ina)) {
+                break;
+            }
+            ret = init_ina226();
+            if (!ret) {
+                LOG_INF("I2C bus recovery successful.");
+                break;
+            } else {
+                LOG_ERR("Error initializing ina226: %d", ret);
+            }
+        }
+        k_sleep(K_MSEC(10));
+    }
+
+    if (ret < 0) {
+        if (rec_count < MAX_RECOVERY_BOOTS) {
+            store_recovery_count(rec_count + 1);
+            settings_commit();
+            k_sleep(K_MSEC(500)); // give settings time to be written to flash
+            __ASSERT(ret < 0, "Giving up on soft reset of IMU. Rebooting.");
+        } else {
+            LOG_ERR("Cannot recover i2c bus after 10 reboot attempts. Giving up.");
+        }
+    } else if (rec_count) {
+        LOG_INF("Resetting recovery count. Recovery successful");
+        store_recovery_count(0); // reset since we're good
+    }
+
+    return ret;
+}
 
 static int gpios_init(void)
 {
@@ -123,6 +232,10 @@ static int gpios_init(void)
 
 /* === Algorithm Structs === */
 
+typedef enum {
+    MPPT_ALGORITHM_PAO = 0
+} mppt_algorithm_t;
+
 struct Sample //TODO: should a sample be floats or sensor_values?
 {
     float power_mW;
@@ -139,14 +252,109 @@ typedef struct {
     uint32_t index_loop_counter;
 } MpptState;
 
+
+static int init_tmp101(void)
+{
+	LOG_INF("Starting TMP101 reading");
+
+	if (!device_is_ready(tmp1)) {
+        LOG_ERR("tmp101 #1 not ready");
+        tmp1 = NULL;
+    }
+    if (!device_is_ready(tmp2)) {
+        LOG_ERR("tmp101 #2 not ready");
+        tmp2 = NULL;
+    }
+
+#if 0
+	sensor_attr_set(tmp1,
+			SENSOR_CHAN_AMBIENT_TEMP,
+			SENSOR_ATTR_TMP101_CONTINUOUS_CONVERSION_MODE,
+			NULL);
+
+#if CONFIG_APP_ENABLE_ONE_SHOT
+	enable_one_shot(tmp1);
+#endif
+
+#if CONFIG_APP_REPORT_TEMP_ALERTS
+	enable_temp_alerts(tmp1);
+#endif
+#endif
+
+	return 0;
+}
+
+static int get_temperature_continuous(const struct device *tmp101, double *tmp101_value)
+{
+
+	struct sensor_value temp_value;
+	const struct device_dt_nodelabels *labels = device_get_dt_nodelabels(tmp101);
+	const char *label;
+	int rc;
+
+	if (labels && labels->num_nodelabels) {
+		label = labels->nodelabels[0];
+	} else {
+		label = "unk";
+	}
+
+	rc = sensor_channel_get(tmp101,
+					SENSOR_CHAN_AMBIENT_TEMP,
+					&temp_value);
+	if (rc) {
+		LOG_ERR("Sensor_channel_get failed: %d", rc);
+		return rc;
+	}
+
+    *tmp101_value = sensor_value_to_double(&temp_value);
+	LOG_DBG("temperature from %s (%s) is %gC (%dC)", tmp101->name, label, *tmp101_value, (int8_t)*tmp101_value);
+	return 0;
+}
+
+static int handle_tmp101(double *tmp1_value, double *tmp2_value)
+{
+	int rc;
+
+    if (tmp1) {
+        rc = sensor_sample_fetch(tmp1);
+        if (rc) {
+            LOG_ERR("tmp1 sensor_sample_fetch failed: %d", rc);
+            return rc;
+        }
+        get_temperature_continuous(tmp1, tmp1_value);
+    } else {
+        *tmp1_value = 0;
+    }
+    if (tmp2) {
+        rc = sensor_sample_fetch(tmp2);
+        if (rc) {
+            LOG_ERR("tmp2 sensor_sample_fetch failed: %d", rc);
+            return rc;
+        }
+        get_temperature_continuous(tmp2, tmp2_value);
+    } else {
+        *tmp2_value = 0;
+    }
+
+	return 0;
+}
+
 static int init_ina226(void)
 {
+    int ret = 0;
+
     LOG_INF("Starting INA226 reading");
 
     if (!device_is_ready(ina)) {
         LOG_ERR("Device %s is not ready.", ina->name);
+        ret = device_init(ina);
+        if (ret == -EALREADY) {
+            LOG_DBG("Device already initialized.");
+        } else if (ret) {
+            LOG_ERR("Error reinitializing the ina226: %d", ret);
+        }
     }
-    return 0;
+    return ret;
 }
 
 uint32_t saturate_uint32_t(const int64_t v, const uint32_t min, const uint32_t max) {
@@ -203,17 +411,17 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     int32_t working_iadj = initial_iadj;
     observe(&first);
     state->sample = first;
-    LOG_INF("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", (double)first.voltage_mV, (double)first.current_uA, (double)first.power_mW);
+    LOG_DBG("first sample: voltage: %f [mV], current: %f [uA], power: %f [mW]", (double)first.voltage_mV, (double)first.current_uA, (double)first.power_mW);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
     observe(&second);
-    //LOG_INF("second sample: voltage: %f [mV], current: %f [uA]", (double)second.voltage_mV, (double)second.current_uA);
+    //LOG_DBG("second sample: voltage: %f [mV], current: %f [uA]", (double)second.voltage_mV, (double)second.current_uA);
 
     working_iadj += IADJ_SAMPLE_OFFSET_uV;
     dac_write_uV(working_iadj);
     observe(&third);
-    //LOG_INF("third sample: voltage: %f [mV], current: %f [uA]", (double)third.voltage_mV, (double)third.current_uA);
+    //LOG_DBG("third sample: voltage: %f [mV], current: %f [uA]", (double)third.voltage_mV, (double)third.current_uA);
 
     float delta_power1 = first.power_mW - second.power_mW;
     float delta_current1 = first.current_uA - second.current_uA;
@@ -222,31 +430,86 @@ float find_ip_slope(MpptState* state, int32_t initial_iadj)
     float delta_current2 = second.current_uA - third.current_uA;
 
     float slope = (delta_power1 * delta_current2 + delta_power2 * delta_current1) / (2.0f * delta_current1 * delta_current2);
-    //LOG_INF(" delta_power1:%f, delta_current1:%f, delta_power2:%f, delta_current2:%f", (double)delta_power1, (double)delta_current1, (double)delta_power2, (double)delta_current2);
+    //LOG_DBG(" delta_power1:%f, delta_current1:%f, delta_power2:%f, delta_current2:%f", (double)delta_power1, (double)delta_current1, (double)delta_power2, (double)delta_current2);
 
-    LOG_INF("calculated slope as %f out of %f \n\r", (double)slope, (double)CRITICAL_SLOPE);
+    LOG_DBG("calculated slope as %f out of %f \n\r", (double)slope, (double)CRITICAL_SLOPE);
     dac_write_uV(initial_iadj);
     return slope;
 }
 
+float find_pt_slope(struct Sample* newer, struct Sample* older) {
+    float dp = (newer->power_mW) - (older->power_mW);
+    int32_t dt = newer->time - older->time; //FIX: NOT SURE THAT THIS HANDLES ZEPHYR TIME CORRECTLY
+    float dpdt = 0.0;
+    if (dt > 0) {
+        dpdt = dp / (float) dt;
+    }
+    return dpdt;
+}
+
+
+
 int32_t calculate_step(MpptState* state)
 {
+
+#if IE_ENABLE
+    float pt_slope = 0.0;
+
+    struct Sample newer = state->IE_samples[(state->index_loop_counter - 1) % IE_ARRAY_LEN];
+    struct Sample older = state->IE_samples[state->index_loop_counter % IE_ARRAY_LEN];
+    pt_slope = find_pt_slope(&newer, &older);
+
+    pt_slope = pt_slope / ((float) IE_ARRAY_LEN);
+    LOG_DBG("pt_slope %f", (double)pt_slope);
+#endif
+
+
+
     int32_t CC_step = 0;
     float CC_critical_adjust = 0.0;
+
+#if CC_ENABLE
+    CC_step = pt_slope * CC_STEP_SCALE;
+    LOG_DBG("CC_step is %f ", (double)CC_step);
+
+    if (pt_slope < 0) {
+        CC_critical_adjust = pt_slope * CC_NRATE;
+    } else if (pt_slope > 0) {
+        CC_critical_adjust = pt_slope * CC_PRATE;
+    }
+
+#endif
+
+
     float ip_slope = find_ip_slope(state, state->iadj_uV);
     float reference_slope = CRITICAL_SLOPE - CC_critical_adjust;
+    LOG_DBG("reference slope is %f, PMAX is %f, NMIN is %f ", (double)reference_slope, (double)CC_PMAX, (double)CC_NMIN);
+
+#if CC_ENABLE
+    if (reference_slope > CC_PMAX) {
+        reference_slope = CC_PMAX;
+    } else if (reference_slope < CC_NMIN) {
+        reference_slope = CC_NMIN;
+    }
+    LOG_DBG("reference slope bounded to %f", (double)reference_slope);
+#endif
 
     float slope_error = (ip_slope - reference_slope) * SLOPE_CORRECTION_FACTOR;
 
+#if DL_ENABLE
+    //TODO: dynamic laziness goes here
+#endif
+
     int32_t step = 0;
     if (slope_error < 0) {
-        step = VREF_STEP_POSITIVE_uV * (slope_error * -1) + CC_step;
+        step = (int32_t) (VREF_STEP_POSITIVE_uV * (-slope_error) + CC_step);
     } else if (slope_error > 0) {
         step = VREF_STEP_NEGATIVE_uV + CC_step;
     } else {
         step = VREF_STEP_POSITIVE_uV + CC_step;
     }
 
+    LOG_DBG("end of calculate_step");
     return step > MAX_STEP ? MAX_STEP : step;
 }
 
@@ -257,13 +520,18 @@ void iterate(MpptState* state)
 
     dac_write_uV(iadj_uV_perturbed);
     state->iadj_uV = iadj_uV_perturbed;
+    LOG_DBG("iterated");
 }
 
 int track(void)
 {
     LOG_INF("Starting Solar Tracking...");
     int ret;
-    i2c_recover_bus(DEVICE_DT_GET(DT_NODELABEL(flexcomm0_lpi2c0)));
+
+    ret = recover_i2c_bus();
+    if (ret != 0) {
+        LOG_ERR("Unable to recover bus. Continuing, but expect issues.");
+    }
 
     ret = gpios_init();
     if (ret != 0) {
@@ -271,6 +539,11 @@ int track(void)
         return ret;
     }
     init_ina226();
+
+    double tmp1_value;
+    double tmp2_value;
+
+    init_tmp101();
 
     /* Can we use the DAC? */
     if (!device_is_ready(dac1_dev)) {
@@ -290,10 +563,10 @@ int track(void)
     };
 
     //FIX: could there be issues when time wraps around?
-    int32_t t_start = k_uptime_get(); //in millisecondss
+    int32_t t_start = k_uptime_get(); //in milliseconds
     int32_t t_last = t_start;
     int32_t t_now = t_start;
-    uint32_t energy_mJ;
+    uint32_t energy_mJ = 0;
 
     state.index_loop_counter = 0;
     int32_t spacing_loop_counter = 0;
@@ -308,15 +581,33 @@ int track(void)
         looping_iadj -= iadj_stepsize;
         struct Sample sample;
         observe(&sample);
-        LOG_INF("%f %f %f %d", (double)sample.voltage_mV, (double)sample.current_uA, (double)sample.power_mW, looping_iadj);
-        LOG_INF("solar thread ran");
-        k_msleep(10);
+        //LOG_INF("%d %f %f %f %d", k_uptime_get(), sample.voltage_mV, sample.current_uA, sample.power_mW, looping_iadj);
+        //LOG_INF("solar thread ran");
+        LOG_DBG("%f %f %f", sample.current_uA, sample.voltage_mV, sample.power_mW);
+        k_msleep(2);
     }
     //END CHARACTERIZATION SWEEP
 #endif
+    //Only PAO implemented for the time being
+    CO_LOCK_OD();
+    CO_OD_RAM.mppt_alg = MPPT_ALGORITHM_PAO;
+    CO_UNLOCK_OD();
+
+#ifdef DUMP_SOLAR_DATA
+    char dump[sizeof(CO_OD_RAM.output) * 3 + 1] = {0};
+#endif
+    int loop = 0;
 
     while(1) {
+#if IE_ENABLE
+        if (!(spacing_loop_counter % IE_SAMPLE_SPACING)) {
+            state.IE_samples[state.index_loop_counter % IE_ARRAY_LEN] = state.sample;
+            state.index_loop_counter++;
+        }
+#endif
         iterate(&state);
+        ret = handle_tmp101(&tmp1_value, &tmp2_value);
+        LOG_DBG("handle_tmp101(): %d", ret);
 
         spacing_loop_counter += 1;
 
@@ -324,8 +615,53 @@ int track(void)
         t_now = state.sample.time;
         energy_mJ += state.sample.power_mW * (t_now - t_last) * 1000; //convert ms to s
 
-        ///send stuff to OD ram or something
-        t_now = k_uptime_get();
+        // Dividing by 1k to convert to joules and truncate to 16 bits for the OD.
+        // FIXME: truncation looks suspicious
+
+        //send stuff to OD_RAM (eventually sent over CAN)
+
+        size_t ver_size = sizeof(CO_OD_RAM.versions.fw_version);
+
+        CO_LOCK_OD();
+        strncpy(CO_OD_RAM.versions.fw_version, &APP_VERSION_STRING[6], ver_size);
+
+        CO_OD_RAM.output.energy = (uint16_t) energy_mJ / 1000;
+
+        CO_OD_RAM.output.voltage = (uint16_t) state.sample.voltage_mV;
+        CO_OD_RAM.output.voltage_avg = (uint16_t) state.sample.voltage_mV;
+        CO_OD_RAM.output.current = (uint16_t) (state.sample.current_uA / 1000);
+        CO_OD_RAM.output.current_avg = (uint16_t) (state.sample.current_uA / 1000);
+        CO_OD_RAM.output.power = (uint16_t) state.sample.power_mW;
+        CO_OD_RAM.output.power_avg = (uint16_t) state.sample.power_mW;
+
+        CO_OD_RAM.output.voltage_max = MAX(CO_OD_RAM.output.voltage_max, (uint16_t) state.sample.voltage_mV);
+        CO_OD_RAM.output.current_max = MAX(CO_OD_RAM.output.current_max, (uint16_t) (state.sample.current_uA / 1000));
+        CO_OD_RAM.output.power_max = MAX(CO_OD_RAM.output.power_max, (uint16_t) state.sample.power_mW);
+
+        CO_OD_RAM.lt1618_iadj = state.iadj_uV / 1000;
+
+        CO_OD_RAM.cell_1.temperature = (int8_t)tmp1_value;
+        CO_OD_RAM.cell_2.temperature = (int8_t)tmp2_value;
+        CO_UNLOCK_OD();
+
+#ifdef DUMP_SOLAR_DATA
+        char *o = dump;
+        char *p = (char *)&CO_OD_RAM.output;
+        int len = sizeof(dump);
+        for (int i = 0; i < sizeof(CO_OD_RAM.output); i++) {
+            snprintk(o, len, "%02x ", *(p++));
+            len -= 3;
+            o += 3;
+        }
+        LOG_INF("output: %s", dump);
+#endif
+        if (loop++ > (1000 / ITERATION_PERIOD)) {
+            LOG_INF("energy:%u, mV:%3.3f, uA:%3.3f, mW:%3.3f, iadj_uV:%u cell_1_temp:%d, cell_2_temp:%d",
+                    energy_mJ, (double)state.sample.voltage_mV, (double)state.sample.current_uA, (double)state.sample.power_mW, state.iadj_uV,
+                    (int8_t)tmp1_value, (int8_t)tmp2_value);
+            loop = 0;
+        }
+        t_now = k_uptime_get(); // *TODO* reevaluate these timing calculations -- no longer constant interval between calls to interate()
         k_msleep(ITERATION_PERIOD - (t_start - t_now) % ITERATION_PERIOD);
     }
 
