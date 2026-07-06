@@ -1,5 +1,6 @@
 board:
   name: mcxn947_solar_card
+  full_name: Oresat MCXN947 Solar Card
   vendor: PSAS
   socs:
     - name: mcxn947
