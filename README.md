@@ -12,7 +12,7 @@ Ensure you are in the `solar` directory (`cd src/oresat/firmware/apps/solar`) pr
 
 | Board         | Build Example                                         |
 | ------------- | ----------------------------------------------------- |
-| mcxn947_solar_card | `west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -DCONFIG_MCUBOOT_ALLOWED=n` |
+| mcxn947_solar_card | `west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -- -DCONFIG_MCUBOOT_ALLOWED=n` |
 | mcxn947_solar_card with shell | `west build -p always -b mcxn947_solar_card/mcxn947/cpu0 -- -DEXTRA_CONF_FILE=overlay_shell.conf -DCONFIG_MCUBOOT_ALLOWED=n` |
 | mcxn947_solar_card with MCUboot | `west build -p always -b mcxn947_solar_card/mcxn947/cpu0 --sysbuild -- -DBOARD_ROOT=$PWD` |
 
