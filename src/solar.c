@@ -515,7 +515,7 @@ int32_t calculate_step(MpptState* state)
 
 void iterate(MpptState* state)
 {
-    const int64_t iadj = state->iadj_uV + calculate_step(state);
+    const int64_t iadj = ((int64_t) state->iadj_uV) + calculate_step(state);
     const uint32_t iadj_uV_perturbed = saturate_uint32_t(iadj, I_ADJ_MIN, I_ADJ_MAX);
 
     dac_write_uV(iadj_uV_perturbed);
