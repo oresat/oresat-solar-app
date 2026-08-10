@@ -33,11 +33,11 @@ LOG_MODULE_REGISTER(oresat_solar2, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* ===  Algorithm Parameters  === */
 #define CC_ENABLE               true //enable corner cutting
-#define CC_STEP_SCALE           400.0f //how does a trend effect our step size
-#define CC_PMAX                 0.0045f
+#define CC_STEP_SCALE           1000.0f //how does a trend effect our step size
+#define CC_PMAX                 0.0046f
 #define CC_PRATE                0.1f
 #define CC_NMIN                 0.0041f
-#define CC_NRATE                0.1f
+#define CC_NRATE                50.0f
 
 #define DL_ENABLE               false
 
@@ -46,17 +46,17 @@ LOG_MODULE_REGISTER(oresat_solar2, CONFIG_LOG_DEFAULT_LEVEL);
 #define IE_SAMPLE_SPACING       8
 
 /* MPPT configuration */
-#define I_ADJ_FAILSAFE          1450000
-#define I_ADJ_INITIAL           1450000
-#define I_ADJ_MAX               1450000
+#define I_ADJ_FAILSAFE          1470000
+#define I_ADJ_INITIAL           1470000
+#define I_ADJ_MAX               1470000
 #define I_ADJ_MIN               0
 
-#define CRITICAL_SLOPE          0.00420f // mW/uA
+#define CRITICAL_SLOPE          0.00425f // mW/uA
 #define IADJ_SAMPLE_OFFSET_uV   25000
-#define SLOPE_CORRECTION_FACTOR 500.0f
+#define SLOPE_CORRECTION_FACTOR 2000.0f
 #define FLOAT_DIST_TO_ZERO      0.1
-#define VREF_STEP_NEGATIVE_uV  -16000
-#define VREF_STEP_POSITIVE_uV   (VREF_STEP_NEGATIVE_uV * -4) //ratio of 2
+#define VREF_STEP_NEGATIVE_uV  -70000
+#define VREF_STEP_POSITIVE_uV   (VREF_STEP_NEGATIVE_uV * -3)
 #define MAX_STEP                100000 //cap steps so they aren't too big when dynamic
 #define CURRENT_SETTLE_TIME     2 //ms
 
@@ -368,6 +368,7 @@ uint32_t saturate_uint32_t(const int64_t v, const uint32_t min, const uint32_t m
 
 int dac_write_uV(int32_t iadj)
 {
+    LOG_DBG("setting iadj to: %d", iadj);
     int32_t toset = (iadj / DAC_UV_PER_BIT);
     return dac_write_value(dac1_dev, DAC_CHANNEL_ID, toset);
 }
@@ -472,10 +473,10 @@ int32_t calculate_step(MpptState* state)
     CC_step = pt_slope * CC_STEP_SCALE;
     LOG_DBG("CC_step is %f ", (double)CC_step);
 
-    if (pt_slope < 0) {
-        CC_critical_adjust = pt_slope * CC_NRATE;
-    } else if (pt_slope > 0) {
-        CC_critical_adjust = pt_slope * CC_PRATE;
+    if (pt_slope < 0) { //power is trending down
+        CC_critical_adjust = pt_slope * CC_NRATE; //always negative
+    } else if (pt_slope > 0) {// power is trending up
+        CC_critical_adjust = pt_slope * CC_PRATE; //always positive
     }
 
 #endif
@@ -509,7 +510,7 @@ int32_t calculate_step(MpptState* state)
         step = VREF_STEP_POSITIVE_uV + CC_step;
     }
 
-    LOG_DBG("end of calculate_step");
+    LOG_DBG("step calculated as %d", step);
     return step > MAX_STEP ? MAX_STEP : step;
 }
 
