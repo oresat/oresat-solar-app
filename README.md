@@ -29,7 +29,7 @@ CAN.
 For the first build, or when previously running with the bootloader:
 ```
 $ west build -p
-$ west flash --erase -r pyocd
+$ west flash --erase
 ```
 
 > NOTE: the `--erase` option will lose the settings data that stores a
@@ -38,9 +38,19 @@ $ west flash --erase -r pyocd
 ## Subsequent builds:
 ```
 $ west build
-$ west flash -r pyocd
-
+$ west flash
 ```
+
+#### Flashing
+
+Flashing is done via [probe-rs](probe.rs). Follow their [installation instructions](https://probe.rs/docs/getting-started/installation/).
+Once installed, follow their [probe setup instructions](https://probe.rs/docs/getting-started/probe-setup/).
+
+If you have previously installed probe-rs and are on an old version (v<0.32), make sure you follow their uninstalling procedure and use their most up-to-date release.
+
+Flash the build using `west flash`.
+
+To fully erase before flashing, do `west flash --erase`
 
 # Setting the CAN node id
 This can be done through a terminal with the Zephyr shell enabled.
@@ -76,7 +86,7 @@ Build again, using whatever options you need as explained in the document.
 # Building and flashing with bootloader
 ```
 $ west build -p -b mcxn947_solar_card/mcxn947/cpu0 --sysbuild -- -DBOARD_ROOT=$PWD
-$ west flash --erase -r pyocd
+$ west flash --erase
 ```
 This will build two binaries: one for the bootloader, and one for the application.
 The flashing step will be done automatically in two parts to flash these two binaries.
