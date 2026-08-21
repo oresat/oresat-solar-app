@@ -46,9 +46,9 @@ LOG_MODULE_REGISTER(oresat_solar2, CONFIG_LOG_DEFAULT_LEVEL);
 #define IE_SAMPLE_SPACING       8
 
 /* MPPT configuration */
-#define I_ADJ_FAILSAFE          1470000
-#define I_ADJ_INITIAL           1470000
-#define I_ADJ_MAX               1470000
+#define I_ADJ_FAILSAFE          1600000
+#define I_ADJ_INITIAL           1600000
+#define I_ADJ_MAX               1600000
 #define I_ADJ_MIN               0
 
 #define CRITICAL_SLOPE          0.00425f // mW/uA
@@ -534,7 +534,20 @@ int track(void)
         LOG_ERR("Unable to recover bus. Continuing, but expect issues.");
     }
 
-    ret = gpios_init();
+    // initialize DAC to assert IADJ BEFORE enabling the lt1618
+    if (!device_is_ready(dac1_dev)) {
+        LOG_ERR("DAC1 device %s is not ready", dac1_dev->name);
+        return -1;
+    }
+    ret = dac_channel_setup(dac1_dev, &dac_ch_cfg);
+    if (ret != 0) {
+        LOG_ERR("Setting up of DAC1 channel failed with code %d", ret);
+        return ret;
+    }
+
+    dac_write_uV(I_ADJ_INITIAL);
+
+    ret = gpios_init(); //enables lt1618
     if (ret != 0) {
         LOG_ERR("Error initializing GPIO lines: %d", ret);
         return ret;
@@ -545,19 +558,6 @@ int track(void)
     double tmp2_value;
 
     init_tmp101();
-
-    /* Can we use the DAC? */
-    if (!device_is_ready(dac1_dev)) {
-        LOG_ERR("DAC1 device %s is not ready", dac1_dev->name);
-        return -1;
-    }
-
-    /* Set it up */
-    ret = dac_channel_setup(dac1_dev, &dac_ch_cfg);
-    if (ret != 0) {
-        LOG_ERR("Setting up of DAC1 channel failed with code %d", ret);
-        return ret;
-    }
 
     MpptState state = {
         .iadj_uV = I_ADJ_INITIAL,
