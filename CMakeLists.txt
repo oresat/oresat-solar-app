@@ -7,9 +7,12 @@ set(BOARD "mcxn947_solar_card/mcxn947/cpu0")
 
 set(VERSION_MAJOR "1")
 set(VERSION_MINOR "0")
-set(PATCHLEVEL "0")
+set(PATCHLEVEL "1")
 set(VERSION_TWEAK "0")
 set(EXTRAVERSION "00000000")
+
+# force creation of new file each time when 'west build -p always' is done
+file(REMOVE "${CMAKE_SOURCE_DIR}/VERSION")
 
 find_package(Git QUIET REQUIRED)
 
