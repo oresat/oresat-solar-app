@@ -15,6 +15,7 @@ build*/
 
 # generated files
 gen/
+VERSION
 
 # modules
 CANopenNode
