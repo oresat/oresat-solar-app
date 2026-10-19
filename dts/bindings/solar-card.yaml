@@ -24,3 +24,29 @@ properties:
     type: phandle-array
     required: true
     description: Output to enable the LT1618 device.
+
+  hw-rev-bit-0-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO input or output.
+
+  hw-rev-bit-1-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO input or output.
+
+  hw-rev-bit-2-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO input or output.
+
+  tcan-nfault-oc-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO input or output.
+
+  tcan-silent-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO input or output.
+
