@@ -22,7 +22,8 @@ static const struct gpio_dt_spec lt1618_enable = GPIO_DT_SPEC_GET(BP_NODE, lt161
 const struct gpio_dt_spec hw_rev_bit_0 = GPIO_DT_SPEC_GET(BP_NODE, hw_rev_bit_0_gpios);
 const struct gpio_dt_spec hw_rev_bit_1 = GPIO_DT_SPEC_GET(BP_NODE, hw_rev_bit_1_gpios);
 const struct gpio_dt_spec hw_rev_bit_2 = GPIO_DT_SPEC_GET(BP_NODE, hw_rev_bit_2_gpios);
-const struct gpio_dt_spec tcan_nfault_oc = GPIO_DT_SPEC_GET(BP_NODE, tcan_nfault_oc_gpios);
+const struct gpio_dt_spec tcan_nfault_oc = GPIO_DT_SPEC_GET(BP_NODE, tcan_nfault_oc_gpios); // SHDN on the TCAN330, FAULT on the TCAN337
+const struct gpio_dt_spec tcan_shutdown = GPIO_DT_SPEC_GET(BP_NODE, tcan_shdn_gpios); // SHDN on the TCAN330, FAULT on the TCAN337
 const struct gpio_dt_spec tcan_silent = GPIO_DT_SPEC_GET(BP_NODE, tcan_silent_gpios);
 
 static unsigned raw_board_rev = HW_REV_UNKNOWN;
@@ -125,16 +126,26 @@ int init_can_gpios(void)
 	}
 	gc_initialized = true;
 
-	ret = gpio_pin_configure_dt(&tcan_nfault_oc, GPIO_INPUT | GPIO_PULL_UP); // goes high on fault; v1.2+ boards only
-	if (ret) {
-		LOG_ERR("Could not configure tcan_nfault_oc as input with pull up: %d", ret);
-		err = ret;
+	if (get_board_hw_rev() == HW_REV_1_3_0) {
+		ret = gpio_pin_configure_dt(&tcan_nfault_oc, GPIO_INPUT | GPIO_PULL_UP); // goes high on fault; v1.2+ boards only
+		if (ret) {
+			LOG_ERR("Could not configure tcan_nfault_oc as input with pull up: %d", ret);
+			err = ret;
+		}
+	} else if (get_board_hw_rev() == HW_REV_1_2_0) {
+		ret = gpio_pin_configure_dt(&tcan_shutdown, GPIO_OUTPUT_INACTIVE); // put in non-shutdown (active) mode
+		if (ret) {
+			LOG_ERR("Could not configure tcan_shutdown as output inactive: %d", ret);
+			err = ret;
+		}
 	}
 
-	ret = gpio_pin_configure_dt(&tcan_silent, GPIO_OUTPUT_INACTIVE); // put silent in disabled (normal) mode
-	if (ret) {
-		LOG_ERR("Could not configure tcan_silent as output inactive: %d", ret);
-		err = ret;
+	if (get_board_hw_rev() != HW_REV_1_0_0) {
+		ret = gpio_pin_configure_dt(&tcan_silent, GPIO_OUTPUT_INACTIVE); // put silent in disabled (normal) mode
+		if (ret) {
+			LOG_ERR("Could not configure tcan_silent as output inactive: %d", ret);
+			err = ret;
+		}
 	}
 
 	return err;
@@ -158,8 +169,25 @@ int set_can_normal(void)
 
 bool get_can_fault(void)
 {
-	if (get_board_hw_rev() != HW_REV_1_0_0) {
+	if (get_board_hw_rev() == HW_REV_1_3_0) {
 		return gpio_pin_get_dt(&tcan_nfault_oc) != 0; // high == fault
 	}
 	return false;
 }
+
+int set_can_shutdown(void)
+{
+	if (get_board_hw_rev() == HW_REV_1_2_0) {
+		return gpio_pin_configure_dt(&tcan_shutdown, GPIO_OUTPUT_ACTIVE); // drive the pin high
+	}
+	return 0;
+}
+
+int set_can_active(void)
+{
+	if (get_board_hw_rev() == HW_REV_1_2_0) {
+		return gpio_pin_configure_dt(&tcan_shutdown, GPIO_OUTPUT_INACTIVE); // drive the pin low
+	}
+	return 0;
+}
+

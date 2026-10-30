@@ -45,6 +45,11 @@ properties:
     required: true
     description: GPIO input or output.
 
+  tcan-shdn-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO input or output.
+
   tcan-silent-gpios:
     type: phandle-array
     required: true

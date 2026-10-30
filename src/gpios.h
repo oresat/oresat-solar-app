@@ -5,7 +5,8 @@ typedef enum {
 	HW_REV_UNKNOWN = -1,	// board revision 1.0.0
 	HW_REV_1_0_0 = 0,	// board revision 1.0.0
 	HW_REV_1_1_0 = 1,	// board revision 1.1.0 -- we cannot distinguish this from 0.0.0 automatically
-	HW_REV_1_2_0 = 2	// board revision 1.2.0
+	HW_REV_1_2_0 = 2,	// board revision 1.2.0
+	HW_REV_1_3_0 = 3	// board revision 1.3.0
 } board_hw_rev_t;
 
 /**
@@ -35,6 +36,10 @@ int set_can_silent(void);
 int set_can_normal(void);
 
 bool get_can_fault(void);
+
+int set_can_shutdown(void);
+
+int set_can_active(void);
 
 bool get_ina226_alert(void);
 
