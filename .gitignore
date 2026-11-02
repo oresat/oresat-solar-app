@@ -24,4 +24,4 @@ CANopenNode
 *.ipynb_checkpoints
 *-checkpoint.ipynb
 */.ipynb_checkpoints/*
-
+/VERSION

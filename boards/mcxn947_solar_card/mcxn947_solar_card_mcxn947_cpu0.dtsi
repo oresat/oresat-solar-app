@@ -52,6 +52,13 @@
 		cell1-tmp101-alert-gpios = <&gpio4 20 0>;
 		cell2-tmp101-alert-gpios = <&gpio4 23 0>;
 		lt1618-enable-gpios = <&gpio4 2 GPIO_ACTIVE_HIGH>;
+
+		hw-rev-bit-0-gpios = <&gpio0 21 0>; /* in -- enable pull up in init code */
+		hw-rev-bit-1-gpios = <&gpio0 22 0>; /* in -- enable pull up in init code */
+		hw-rev-bit-2-gpios = <&gpio0 23 0>; /* in -- enable pull up in init code */
+		tcan-nfault-oc-gpios = <&gpio1 12 0>; /* in; only on board v1.3 */
+		tcan-shdn-gpios = <&gpio1 12 0>; /* in; only on board v1.2 */
+		tcan-silent-gpios = <&gpio1 14 0>;	  /* out; only on board v1.2+ */
 	};
 
 	zephyr,user {

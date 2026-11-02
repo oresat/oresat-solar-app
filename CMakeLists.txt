@@ -45,7 +45,7 @@ project(oresat_mcxn947_solar)
 
 include_directories("${PROJECT_SOURCE_DIR}") # needed so c code can find this header
 
-target_sources(app PRIVATE src/main.c drivers/sensor/ti/tmp101/tmp101.c)
+target_sources(app PRIVATE src/main.c src/gpios.c drivers/sensor/ti/tmp101/tmp101.c)
 
 # Compile in various files depending on Kconfig values.
 target_sources_ifdef(CONFIG_BLINK        app PRIVATE src/blink.c)

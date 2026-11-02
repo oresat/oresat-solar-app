@@ -21,6 +21,8 @@
 #include <canopennode.h>
 #include <CO_OD.h>
 
+#include "gpios.h"
+
 LOG_MODULE_REGISTER(oresat_solar2, CONFIG_LOG_DEFAULT_LEVEL);
 
 // CAN data debug logging
@@ -103,14 +105,6 @@ const struct dac_channel_cfg dac_ch_cfg = {
 }; //TODO: specify averaging
 static const struct device *tmp1 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell1));
 static const struct device *tmp2 = DEVICE_DT_GET(DT_NODELABEL(tmp101_cell2));
-
-/* === GPIO data === */
-#define BP_NODE DT_NODELABEL(solargpios)
-
-static const struct gpio_dt_spec ina226_nalert = GPIO_DT_SPEC_GET(BP_NODE, ina226_nalert_gpios);
-static const struct gpio_dt_spec cell1_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell1_tmp101_alert_gpios);
-static const struct gpio_dt_spec cell2_tmp101_alert = GPIO_DT_SPEC_GET(BP_NODE, cell2_tmp101_alert_gpios);
-static const struct gpio_dt_spec lt1618_enable = GPIO_DT_SPEC_GET(BP_NODE, lt1618_enable_gpios);
 
 static int init_ina226(void);
 
@@ -199,30 +193,6 @@ static int recover_i2c_bus(void)
     } else if (rec_count) {
         LOG_INF("Resetting recovery count. Recovery successful");
         store_recovery_count(0); // reset since we're good
-    }
-
-    return ret;
-}
-
-static int gpios_init(void)
-{
-    int ret;
-
-    ret = gpio_pin_configure_dt(&ina226_nalert, GPIO_INPUT);
-    if (ret) {
-        return ret;
-    }
-    ret = gpio_pin_configure_dt(&cell1_tmp101_alert, GPIO_INPUT);
-    if (ret) {
-        return ret;
-    }
-    ret = gpio_pin_configure_dt(&cell2_tmp101_alert, GPIO_INPUT);
-    if (ret) {
-        return ret;
-    }
-    ret = gpio_pin_configure_dt(&lt1618_enable, GPIO_OUTPUT_ACTIVE); // enable the LT1618
-    if (ret) {
-        return ret;
     }
 
     return ret;
@@ -547,7 +517,7 @@ int track(void)
 
     dac_write_uV(I_ADJ_INITIAL);
 
-    ret = gpios_init(); //enables lt1618
+    ret = init_gpios(); //enables lt1618
     if (ret != 0) {
         LOG_ERR("Error initializing GPIO lines: %d", ret);
         return ret;
@@ -624,7 +594,9 @@ int track(void)
         size_t ver_size = sizeof(CO_OD_RAM.versions.fw_version);
 
         CO_LOCK_OD();
-        strncpy(CO_OD_RAM.versions.fw_version, &APP_VERSION_STRING[6], ver_size);
+        // The CAN stack does not need arrays of characters to be NULL terminated, so use memcpy
+        // instead of strncpy or strcat.
+        memcpy(CO_OD_RAM.versions.fw_version, &APP_VERSION_STRING[6], ver_size);
 
         CO_OD_RAM.output.energy = (uint16_t) energy_mJ / 1000;
 
